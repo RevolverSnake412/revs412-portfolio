@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <style type="text/css">
+      .ColorScheme-Text { color:#3b3f42; }
+    </style>
+  </defs>
+  <path style="fill:currentColor;fill-rule:evenodd" d="M41 5 35 11l11 11-11 11 6 6 17-17L41 5z" class="ColorScheme-Text"/>
+  <path style="fill:#fa8865" d="M18.9 6c-1.8 0-3.15 1.4-3.15 3.125 0 1.675 1.35 3.125 3.15 3.125 1.7 0 3.1-1.45 3.1-3.125C22 7.4 20.6 6 18.9 6z"/>
+  <path style="fill:#63c605" d="M10.5 25.5C8 25.5 6 27.5 6 30s2 4.5 4.5 4.5S15 32.5 15 30s-2-4.5-4.5-4.5z"/>
+  <path style="fill:#1b89f3" d="M25.5 45C21.9 45 19 47.9 19 51.5S21.9 58 25.5 58 32 55.1 32 51.5 29.1 45 25.5 45z"/>
+</svg>

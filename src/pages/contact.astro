@@ -1,0 +1,12 @@
+---
+import { getEntry } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+const settings = await getEntry('settings', 'site');
+if (!settings) throw new Error('Missing settings/site.yaml');
+const { contact } = settings.data;
+const telegramUrl = contact.telegram ? `https://t.me/${contact.telegram.replace(/^@/, '')}` : undefined;
+---
+<BaseLayout title="Contact · revs412" description="Get in touch about practical, reliable technical work.">
+  <main class="shell page"><header class="page-header"><p class="eyebrow">open a conversation</p><h1>Contact</h1><p>For small business tools, systems work, troubleshooting, automation, deployment, and documentation.</p></header>
+  <section class="contact-panel" aria-label="Contact details"><dl class="contact-list"><div><dt>email:</dt><dd><a href={`mailto:${contact.email}`}>{contact.email} ↗</a></dd></div>{contact.discord && <div><dt>discord:</dt><dd>{contact.discordUrl ? <a href={contact.discordUrl} rel="noreferrer">{contact.discord} ↗</a> : contact.discord}</dd></div>}{contact.telegram && telegramUrl && <div><dt>telegram:</dt><dd><a href={telegramUrl} rel="noreferrer">{contact.telegram} ↗</a></dd></div>}{contact.github && <div><dt>github:</dt><dd><a href={contact.github} rel="noreferrer">open profile ↗</a></dd></div>}</dl><p class="contact-note">{contact.availability}</p>{contact.location && <p class="contact-location">{contact.location}</p>}</section></main>
+</BaseLayout>

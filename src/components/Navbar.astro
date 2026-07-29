@@ -1,0 +1,27 @@
+---
+const { name } = Astro.props;
+const path = Astro.url.pathname;
+const base = import.meta.env.BASE_URL;
+const links = [
+  { href: `${base}work`, path: `${base}work`, label: 'Work' }, { href: `${base}notes`, path: `${base}notes`, label: 'Notes' },
+  { href: `${base}principles`, path: `${base}principles`, label: 'Principles' }, { href: `${base}contact`, path: `${base}contact`, label: 'Contact' },
+];
+---
+<header class="site-header">
+  <nav class="nav shell" aria-label="Main navigation">
+    <a class="brand" href={base}>{name}</a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-links">Menu</button>
+    <div class="nav-links" id="site-links">
+      {links.map((link) => <a href={link.href} aria-current={path === link.path || path.startsWith(`${link.path}/`) ? 'page' : undefined}>{link.label}</a>)}
+    </div>
+  </nav>
+</header>
+<script>
+  const button = document.querySelector<HTMLButtonElement>('.nav-toggle');
+  const links = document.querySelector<HTMLElement>('.nav-links');
+  button?.addEventListener('click', () => {
+    const open = links?.classList.toggle('is-open') ?? false;
+    button.setAttribute('aria-expanded', String(open));
+  });
+  document.querySelectorAll('[data-terminal-toggle]').forEach((toggle) => toggle.addEventListener('click', () => window.dispatchEvent(new Event('terminal:open'))));
+</script>

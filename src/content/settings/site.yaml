@@ -1,0 +1,56 @@
+site:
+  name: revs412
+  shortName: revs412
+  title: Practical technical systems, built with clear reasoning.
+  heroLead: Practical technical systems,
+  heroDocument: intro.md
+  heroSubtitleLines:
+    - I work on small business tools, infrastructure, automation, deployment, and troubleshooting.
+    - My focus is choosing the right level of complexity and making systems understandable, usable, and reliable.
+  heroSentences:
+    - built with clear reasoning.
+    - built to stay maintainable.
+    - planned before built.
+    - grounded in real requirements.
+    - improved through careful debugging.
+    - documented for future changes.
+    - tested against practical use.
+    - organized around clear decisions.
+    - made reliable through small details.
+    - built for day-to-day use.
+    - kept simple where possible.
+    - adapted to existing workflows.
+    - reviewed before being shipped.
+    - maintained with clear structure.
+    - designed around operational reality.
+    - debugged one layer at a time.
+    - built with measured tradeoffs.
+    - shaped by practical limits.
+    - kept stable under change.
+    - delivered with readable documentation.
+    - made easier to operate.
+    - designed for careful handover.
+    - built around the actual problem.
+    - refined through evidence and testing.
+    - kept clear for future work.
+    - planned with maintenance in mind.
+    - delivered with fewer surprises.
+    - debugged from logs and behavior.
+    - built to fit the environment.
+    - kept useful after delivery.
+  description: >-
+    I work on small business tools, infrastructure, automation, deployment, and troubleshooting.
+    My focus is choosing the right level of complexity and making systems understandable, usable, and reliable.
+  introCommand: revs412@portfolio:~$ vim intro.md
+  capabilities:
+    - software + infrastructure
+    - debugging
+    - deployment
+    - technical writing
+  contact:
+    email: contact@revs412.me
+    discord: '@revs412'
+    discordUrl: https://discordapp.com/users/455960409082560524
+    telegram: '@revs412'
+    availability: Available for considered technical work.
+    location: Remote / Morocco

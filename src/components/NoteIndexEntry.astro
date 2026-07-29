@@ -1,0 +1,13 @@
+---
+const { item } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const formattedDate = item.data.date.toLocaleDateString('en', { year: 'numeric', month: 'short', day: 'numeric' });
+---
+<article class="note-index-entry">
+  <div>
+    <h3>{item.data.title}</h3>
+    <p class="note-index-meta">{item.data.category} · {formattedDate}{item.data.updated ? ` · updated ${item.data.updated.toLocaleDateString('en', { year: 'numeric', month: 'short', day: 'numeric' })}` : ''}</p>
+    <p class="note-index-summary">{item.data.summary}</p>
+  </div>
+  <a class="note-index-open" href={`${base}notes/${item.data.slug}`}>Open: Read note →</a>
+</article>

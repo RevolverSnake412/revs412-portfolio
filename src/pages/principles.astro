@@ -1,0 +1,9 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+const principles = (await getCollection('principles', ({ data }) => data.published)).sort((a, b) => a.data.order - b.data.order);
+---
+<BaseLayout title="Principles · revs412" description="Working principles for practical technical systems.">
+  <main class="shell page"><header class="page-header"><p class="eyebrow">operating notes</p><h1>Principles</h1><p>These principles keep decisions grounded in the system in front of us and its future maintenance.</p></header>
+  <div class="principle-list">{principles.map((item, index) => <div class="principle"><span class="principle-number">{String(index + 1).padStart(2, '0')}</span><p>{item.data.statement}</p></div>)}</div></main>
+</BaseLayout>

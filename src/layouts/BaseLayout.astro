@@ -1,0 +1,37 @@
+---
+import { getEntry } from 'astro:content';
+import '../styles/global.css';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+import Terminal from '../components/Terminal.astro';
+import CommandContext from '../components/CommandContext.astro';
+
+interface Props { title?: string; description?: string; showCommandContext?: boolean; }
+const settings = await getEntry('settings', 'site');
+if (!settings) throw new Error('Missing settings/site.yaml');
+const { title = settings.data.title, description = settings.data.description, showCommandContext = true } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href={canonical} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={settings.data.name} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <title>{title}</title>
+  </head>
+  <body>
+    <Navbar name={settings.data.shortName} />
+    {showCommandContext && <CommandContext homeCommand={settings.data.introCommand} />}
+    <slot />
+    <Footer email={settings.data.contact.email} />
+    <Terminal settings={settings.data} />
+  </body>
+</html>

@@ -1,0 +1,30 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+export async function getStaticPaths() {
+  const work = await getCollection('work', ({ data }) => data.published);
+  return work.map((entry) => ({ params: { slug: entry.data.slug }, props: { entry } }));
+}
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const projectDate = entry.data.date.toLocaleDateString('en', { year: 'numeric', month: 'long', day: 'numeric' });
+---
+<BaseLayout title={`${entry.data.title} · revs412`} description={entry.data.summary}>
+  <main class="shell page"><article class="detail">
+    <header class="page-header"><p class="eyebrow">project / {projectDate}</p><h1>{entry.data.title}</h1><p>{entry.data.summary}</p></header>
+    {entry.data.cover && <img src={entry.data.cover} alt="" />}
+    <div class="process" aria-label="Case study structure">
+      <div><h2>Problem</h2><p>{entry.data.problem}</p></div>
+      <div><h2>Constraints</h2><p>{entry.data.constraints}</p></div>
+      <div><h2>Approach</h2><p>{entry.data.approach}</p></div>
+      <div><h2>Outcome</h2><p>{entry.data.outcome}</p></div>
+    </div>
+    <section class="work-secondary" aria-labelledby="secondary-details-title">
+      <h2 id="secondary-details-title">Secondary details</h2>
+      <div class="prose"><Content /></div>
+    </section>
+    {entry.data.tools?.length ? <ul class="tag-list" aria-label="Supporting tools">{entry.data.tools.map((tool: string) => <li class="tag">{tool}</li>)}</ul> : null}
+    {(entry.data.externalLink || entry.data.repoLink) && <nav class="detail-links" aria-label="Project links">{entry.data.externalLink && <a href={entry.data.externalLink} rel="noreferrer">external link ↗</a>}{entry.data.repoLink && <a href={entry.data.repoLink} rel="noreferrer">repository ↗</a>}</nav>}
+  </article></main>
+</BaseLayout>

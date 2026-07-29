@@ -1,0 +1,337 @@
+---
+import { getCollection } from 'astro:content';
+import { parrotFrames } from '../data/parrotFrames';
+
+const { settings } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const [work, notes, principles] = await Promise.all([
+  getCollection('work', ({ data }) => data.published),
+  getCollection('notes', ({ data }) => data.published),
+  getCollection('principles', ({ data }) => data.published),
+]);
+const terminalData = {
+  base,
+  intro: settings.description,
+  contact: settings.contact,
+  work: work.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()).map(({ data }) => ({ slug: data.slug, title: data.title, summary: data.summary, problem: data.problem, constraints: data.constraints, approach: data.approach, outcome: data.outcome })),
+  notes: notes.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()).map(({ data }) => ({ slug: data.slug, title: data.title, summary: data.summary, category: data.category, date: data.date.toISOString().slice(0, 10) })),
+  principles: principles.sort((a, b) => a.data.order - b.data.order).map(({ data }) => data.statement),
+};
+---
+<section class="terminal-overlay" id="terminal-mode" role="dialog" aria-modal="true" aria-label="Terminal mode" hidden>
+  <div class="terminal">
+    <div class="terminal-bar"><span>revs412@portfolio:~</span><span class="terminal-dots terminal-mode-dots"><button class="terminal-dot-minimize" type="button" data-terminal-minimize aria-label="Minimize terminal mode"></button><button class="terminal-dot-maximize" type="button" data-terminal-maximize aria-label="Maximize terminal mode"></button><button class="terminal-dot-close" type="button" data-terminal-close aria-label="Close and reset terminal mode"></button></span></div>
+    <div class="terminal-output" data-terminal-output aria-live="polite"></div>
+    <pre class="terminal-parrot" data-terminal-parrot hidden aria-label="A dancing parrot"></pre>
+    <canvas class="terminal-cmatrix" data-terminal-cmatrix hidden aria-label="CMatrix animation"></canvas>
+    <form class="terminal-input-row" data-terminal-form>
+      <label class="terminal-prompt" for="terminal-command"><span class="command-identity">revs412@portfolio</span><span class="command-colon">:</span><span class="command-path">~</span><span class="command-dollar">$</span></label>
+      <span class="terminal-input-shell">
+        <input class="terminal-input" id="terminal-command" data-terminal-input autocomplete="off" spellcheck="false" aria-label="Terminal command" />
+        <span class="terminal-input-visual" aria-hidden="true"><span data-terminal-before></span><span class="cursor terminal-input-cursor">█</span><span data-terminal-after></span></span>
+      </span>
+    </form>
+  </div>
+</section>
+<script>
+  import { CMatrix, parseCMatrix } from '../scripts/cmatrix';
+  Object.assign(window, { __revsCMatrix: { CMatrix, parseCMatrix } });
+</script>
+<script is:inline define:vars={{ terminalData, parrotFrames }}>
+  const overlay = document.querySelector('#terminal-mode');
+  const output = overlay?.querySelector('[data-terminal-output]');
+  const form = overlay?.querySelector('[data-terminal-form]');
+  const input = overlay?.querySelector('[data-terminal-input]');
+  const inputBefore = overlay?.querySelector('[data-terminal-before]');
+  const inputAfter = overlay?.querySelector('[data-terminal-after]');
+  const parrot = overlay?.querySelector('[data-terminal-parrot]');
+  const cmatrixCanvas = overlay?.querySelector('[data-terminal-cmatrix]');
+  const minimizeButton = overlay?.querySelector('[data-terminal-minimize]');
+  const maximizeButton = overlay?.querySelector('[data-terminal-maximize]');
+  const closeButton = overlay?.querySelector('[data-terminal-close]');
+  let bootActive = false;
+  let bootTimer;
+  let bootOnNextOpen = false;
+  const terminalHistory = [];
+  let terminalHistoryIndex = 0;
+  const rememberTerminalCommand = (command) => {
+    const value = command.trim();
+    if (!value) return;
+    terminalHistory.push(value);
+    terminalHistoryIndex = terminalHistory.length;
+  };
+  let parrotActive = false;
+  let cmatrixActive = false;
+  let cmatrixPlayer;
+  const cmatrixMessage = (value) => `<pre class="terminal-cmatrix-message">${escapeHtml(value)}</pre>`;
+  const exitCMatrix = (broadcast = true) => {
+    if (!cmatrixActive) return;
+    cmatrixActive = false;
+    cmatrixPlayer?.stop();
+    cmatrixCanvas?.setAttribute('hidden', '');
+    output?.removeAttribute('hidden');
+    form?.removeAttribute('hidden');
+    syncTerminalCursor();
+    if (broadcast) window.dispatchEvent(new CustomEvent('terminal:cmatrix-exit', { detail: { source: 'full' } }));
+  };
+  const startCMatrix = (args) => {
+    const api = window.__revsCMatrix;
+    if (!api || !cmatrixCanvas) { print(line('cmatrix is still loading. Try again in a moment.')); return; }
+    const result = api.parseCMatrix(args);
+    if (result.kind !== 'run') { print(cmatrixMessage(result.text || '')); return; }
+    exitParrot();
+    cmatrixActive = true;
+    output?.setAttribute('hidden', '');
+    form?.setAttribute('hidden', '');
+    cmatrixCanvas.removeAttribute('hidden');
+    cmatrixPlayer?.stop();
+    cmatrixPlayer = new api.CMatrix(cmatrixCanvas, result.options, () => exitCMatrix());
+    cmatrixPlayer.start();
+  };
+  let parrotTimer;
+  const renderParrotFrame = (index) => {
+    if (parrot) parrot.textContent = parrotFrames[index % parrotFrames.length];
+  };
+  const startParrot = () => {
+    parrotActive = true;
+    output?.setAttribute('hidden', '');
+    form?.setAttribute('hidden', '');
+    parrot?.removeAttribute('hidden');
+    window.clearInterval(parrotTimer);
+    let frameIndex = 0;
+    renderParrotFrame(frameIndex);
+    parrotTimer = window.setInterval(() => {
+      frameIndex += 1;
+      renderParrotFrame(frameIndex);
+    }, 70);
+  };
+  const exitParrot = () => {
+    parrotActive = false;
+    window.clearInterval(parrotTimer);
+    parrot?.setAttribute('hidden', '');
+    output?.removeAttribute('hidden');
+    form?.removeAttribute('hidden');
+  };
+  const syncTerminalCursor = () => {
+    if (!input) return;
+    const cursor = input.selectionStart ?? input.value.length;
+    if (inputBefore) inputBefore.textContent = input.value.slice(0, cursor);
+    if (inputAfter) inputAfter.textContent = input.value.slice(cursor);
+  };
+  const escapeHtml = (value) => value.replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character]);
+  const line = (value) => `<div>${value}</div>`;
+  const terminalLink = (href, label) => `<a class="terminal-link" href="${href}">${escapeHtml(label)}</a>`;
+  const prompt = (command) => line(`<span class="terminal-prompt"><span class="command-identity">revs412@portfolio</span><span class="command-colon">:</span><span class="command-path">~</span><span class="command-dollar">$</span></span> <span class="cyan">${escapeHtml(command)}</span>`);
+  const bootPrompt = (command) => prompt(command).replace('</div>', '<span class="cursor terminal-input-cursor" aria-hidden="true">█</span></div>');
+  const print = (value) => { if (output) { output.insertAdjacentHTML('beforeend', value); output.scrollTop = output.scrollHeight; } };
+  const help = () => [
+    line('<span class="cyan">commands</span>'),
+    line('help — show available commands'), line('intro — read the introduction'),
+    line('work / work &lt;slug&gt; — list or open case studies'),
+    line('notes / notes &lt;slug&gt; — list or open notes'),
+    line('principles — list working principles'), line('contact — contact details'), line('parrot — start the local parrot'), line('cmatrix [options] — run the CMatrix terminal simulation'),
+    line('clear — clear this screen'),
+  ].join('');
+  const listWork = () => terminalData.work.length ? terminalData.work.map((item) => line(`${terminalLink(`${terminalData.base}work/${item.slug}`, item.slug)} — ${escapeHtml(item.title)}`)).join('') : line('No published work items yet.');
+  const listNotes = () => terminalData.notes.length ? terminalData.notes.map((item) => line(`${terminalLink(`${terminalData.base}notes/${item.slug}`, item.slug)} — ${escapeHtml(item.title)}`)).join('') : line('No published notes yet.');
+  const shellWords = (value) => Array.from(value.matchAll(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g), (match) => match[0].replace(/^(?:"|')|(?:"|')$/g, ''));
+  const run = (raw) => {
+    const command = raw.trim();
+    if (!command) return;
+    print(prompt(command));
+    const [rawName = '', ...args] = shellWords(command);
+    const name = rawName.toLowerCase();
+    const slug = args.join('-').toLowerCase();
+    if (name === 'help') print(help());
+    else if (name === 'intro') print(line(escapeHtml(terminalData.intro)));
+    else if (name === 'work' && !slug) print(listWork());
+    else if (name === 'notes' && !slug) print(listNotes());
+    else if (name === 'principles') print(terminalData.principles.map((item, i) => line(`${i + 1}. ${escapeHtml(item)}`)).join(''));
+    else if (name === 'contact') print(line(terminalLink(`mailto:${terminalData.contact.email}`, terminalData.contact.email)) + (terminalData.contact.discord ? line(`discord: ${escapeHtml(terminalData.contact.discord)}`) : '') + (terminalData.contact.telegram ? line(`telegram: ${terminalLink(`https://t.me/${terminalData.contact.telegram.replace(/^@/, '')}`, terminalData.contact.telegram)}`) : '') + line(escapeHtml(terminalData.contact.availability)) + (terminalData.contact.location ? line(escapeHtml(terminalData.contact.location)) : ''));
+    else if (name === 'work') { const item = terminalData.work.find((entry) => entry.slug === slug); print(item ? line(`<span class="cyan">${escapeHtml(item.title)}</span>`) + line(`problem: ${escapeHtml(item.problem)}`) + line(`constraints: ${escapeHtml(item.constraints)}`) + line(`approach: ${escapeHtml(item.approach)}`) + line(`outcome: ${escapeHtml(item.outcome)}`) + line(terminalLink(`${terminalData.base}work/${item.slug}`, 'open full case study →')) : line(`No work item found for "${escapeHtml(slug)}".`)); }
+    else if (name === 'notes') { const item = terminalData.notes.find((entry) => entry.slug === slug); print(item ? line(`<span class="cyan">${escapeHtml(item.title)}</span>`) + line(escapeHtml(item.summary)) + line(terminalLink(`${terminalData.base}notes/${item.slug}`, 'open note →')) : line(`No note found for "${escapeHtml(slug)}".`)); }
+    else if (name === 'parrot') startParrot();
+    else if (name === 'cmatrix') startCMatrix(args);
+    else if (name === 'clear') { if (output) output.innerHTML = ''; }
+    else print(line(`Command not found: ${escapeHtml(command)}. Type <span class="cyan">help</span>.`));
+  };
+  const principlesOutput = () => terminalData.principles.map((item, index) => line(`${index + 1}. ${escapeHtml(item)}`)).join('');
+  const bootTerminal = () => {
+    window.clearTimeout(bootTimer);
+    exitParrot();
+    bootActive = true;
+    if (output) output.innerHTML = '';
+    form?.setAttribute('hidden', '');
+    window.dispatchEvent(new Event('terminal:boot-start'));
+    const command = 'principles';
+    let index = 0;
+    const typeNext = () => {
+      if (output) output.innerHTML = bootPrompt(command.slice(0, index));
+      if (index < command.length) {
+        index += 1;
+        bootTimer = window.setTimeout(typeNext, 70);
+        return;
+      }
+      bootTimer = window.setTimeout(() => {
+        if (output) {
+          output.innerHTML = prompt(command);
+          output.insertAdjacentHTML('beforeend', principlesOutput());
+        }
+        bootActive = false;
+        form?.removeAttribute('hidden');
+        syncTerminalCursor();
+        window.dispatchEvent(new Event('terminal:boot-complete'));
+        if (!overlay?.hasAttribute('hidden')) input?.focus();
+      }, 400);
+    };
+    typeNext();
+  };
+  const open = () => {
+    overlay?.removeAttribute('hidden');
+    if (bootOnNextOpen) {
+      bootOnNextOpen = false;
+      bootTerminal();
+      return;
+    }
+    if (!bootActive) input?.focus();
+  };
+  const hide = () => overlay?.setAttribute('hidden', '');
+  const reset = () => {
+    window.clearTimeout(bootTimer);
+    bootActive = false;
+    exitParrot();
+    exitCMatrix(false);
+    if (output) output.innerHTML = '';
+    window.dispatchEvent(new Event('terminal:reset'));
+    if (input) input.value = '';
+    syncTerminalCursor();
+    hide();
+  };
+  let minimizeTimer;
+  let minimizeHideTimer;
+  const minimize = () => {
+    window.clearTimeout(minimizeTimer);
+    window.clearTimeout(minimizeHideTimer);
+    if (!overlay?.hasAttribute('hidden')) {
+      overlay.classList.add('is-minimizing');
+      minimizeHideTimer = window.setTimeout(() => {
+        overlay.classList.remove('is-minimizing');
+        hide();
+      }, 180);
+    }
+    window.dispatchEvent(new Event('terminal:minimize-pending'));
+    minimizeTimer = window.setTimeout(() => window.dispatchEvent(new Event('terminal:minimize-complete')), 1500);
+  };
+  let restartTimer;
+  const restart = (replayOnOpen = false) => {
+    hide();
+    bootOnNextOpen = replayOnOpen;
+    window.clearTimeout(restartTimer);
+    window.dispatchEvent(new Event('terminal:restart-pending'));
+    restartTimer = window.setTimeout(() => {
+      reset();
+      bootTerminal();
+      window.dispatchEvent(new Event('terminal:restart-complete'));
+    }, 1700);
+  };
+  window.addEventListener('terminal:open', open);
+  window.addEventListener('terminal:minimize-request', minimize);
+  window.addEventListener('terminal:parrot-exit', exitParrot);
+  window.addEventListener('terminal:cmatrix-exit', (event) => {
+    const detail = event instanceof CustomEvent ? event.detail : undefined;
+    if (detail?.source !== 'full') exitCMatrix(false);
+  });
+  window.addEventListener('terminal:reset-request', () => restart());
+  window.addEventListener('terminal:command', (event) => {
+    const detail = event instanceof CustomEvent ? event.detail : undefined;
+    if (detail?.source === 'preview') {
+      rememberTerminalCommand(detail.command);
+      run(detail.command);
+    }
+  });
+  bootTerminal();
+  form?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    if (bootActive) return;
+    const value = input?.value ?? '';
+    rememberTerminalCommand(value);
+    run(value);
+    if (value.trim()) window.dispatchEvent(new CustomEvent('terminal:command', { detail: { command: value, source: 'full' } }));
+    if (input) input.value = '';
+    syncTerminalCursor();
+  });
+  input?.addEventListener('input', syncTerminalCursor);
+  input?.addEventListener('select', syncTerminalCursor);
+  input?.addEventListener('keyup', syncTerminalCursor);
+  input?.addEventListener('click', syncTerminalCursor);
+  minimizeButton?.addEventListener('click', minimize);
+  maximizeButton?.addEventListener('click', hide);
+  closeButton?.addEventListener('click', () => restart(true));
+  document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && !overlay?.hasAttribute('hidden')) hide(); });
+  const focusTerminal = () => input?.focus({ preventScroll: true });
+  const updateTerminalInput = (value, cursor) => {
+    if (!input) return;
+    input.value = value;
+    input.setSelectionRange(cursor, cursor);
+    syncTerminalCursor();
+  };
+  document.addEventListener('keydown', (event) => {
+    if (!input || overlay?.hasAttribute('hidden') || event.defaultPrevented) return;
+    if (bootActive) {
+      event.preventDefault();
+      return;
+    }
+    if (parrotActive) {
+      if (event.key.toLowerCase() === 'q' || (event.ctrlKey && event.key.toLowerCase() === 'c')) {
+        event.preventDefault();
+        window.dispatchEvent(new Event('terminal:parrot-exit'));
+      }
+      return;
+    }
+    if (cmatrixActive) {
+      event.preventDefault();
+      cmatrixPlayer?.key(event);
+      return;
+    }
+    if (event.ctrlKey || event.metaKey || event.altKey) return;
+    const start = input.selectionStart ?? input.value.length;
+    const end = input.selectionEnd ?? start;
+    const value = input.value;
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      form?.requestSubmit();
+      focusTerminal();
+    } else if (event.key.length === 1) {
+      event.preventDefault();
+      updateTerminalInput(`${value.slice(0, start)}${event.key}${value.slice(end)}`, start + event.key.length);
+      focusTerminal();
+    } else if (event.key === 'Backspace' && (start || end)) {
+      event.preventDefault();
+      const nextStart = start === end ? start - 1 : start;
+      updateTerminalInput(`${value.slice(0, nextStart)}${value.slice(end)}`, nextStart);
+      focusTerminal();
+    } else if (event.key === 'Delete' && (start !== end || start < value.length)) {
+      event.preventDefault();
+      const nextEnd = start === end ? end + 1 : end;
+      updateTerminalInput(`${value.slice(0, start)}${value.slice(nextEnd)}`, start);
+      focusTerminal();
+    } else if (event.key === 'ArrowUp' && terminalHistory.length) {
+      event.preventDefault();
+      terminalHistoryIndex = Math.max(0, terminalHistoryIndex - 1);
+      updateTerminalInput(terminalHistory[terminalHistoryIndex], terminalHistory[terminalHistoryIndex].length);
+      focusTerminal();
+    } else if (event.key === 'ArrowDown' && terminalHistory.length) {
+      event.preventDefault();
+      terminalHistoryIndex = Math.min(terminalHistory.length, terminalHistoryIndex + 1);
+      const next = terminalHistoryIndex === terminalHistory.length ? '' : terminalHistory[terminalHistoryIndex];
+      updateTerminalInput(next, next.length);
+      focusTerminal();
+    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight' || event.key === 'Home' || event.key === 'End') {
+      event.preventDefault();
+      const nextCursor = event.key === 'ArrowLeft' ? Math.max(0, start - 1) : event.key === 'ArrowRight' ? Math.min(value.length, end + 1) : event.key === 'Home' ? 0 : value.length;
+      input.setSelectionRange(nextCursor, nextCursor);
+      syncTerminalCursor();
+      focusTerminal();
+    }
+  });
+</script>

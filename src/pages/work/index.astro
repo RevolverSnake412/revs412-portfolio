@@ -1,0 +1,20 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import WorkIndexEntry from '../../components/WorkIndexEntry.astro';
+import EmptyState from '../../components/EmptyState.astro';
+const work = (await getCollection('work', ({ data }) => data.published)).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+---
+<BaseLayout title="Work · revs412" description="Case studies focused on constraints, reasoning, and reliable delivery.">
+  <main class="shell page">
+    <header class="page-header"><p class="eyebrow">case studies</p><h1>Work</h1><p>This section collects selected practical work: systems, tools, and delivery shaped by real constraints and clear reasoning.</p></header>
+    <section class="work-guidance" aria-labelledby="work-guidance-title">
+      <h2 id="work-guidance-title">How I use these work pages</h2>
+      <p>Each page records the problem, the constraints around it, the approach taken, and the outcome. Tools are included as supporting context, not as the project’s identity.</p>
+    </section>
+    <section class="work-index-section" aria-labelledby="work-index-title">
+      <div class="work-index-heading"><p class="eyebrow">project index</p><h2 id="work-index-title">Selected practical work</h2></div>
+      {work.length ? <div class="work-index">{work.map((item) => <WorkIndexEntry item={item} />)}</div> : <EmptyState>No published case studies yet.</EmptyState>}
+    </section>
+  </main>
+</BaseLayout>

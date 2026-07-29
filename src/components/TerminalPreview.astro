@@ -1,0 +1,290 @@
+---
+import { parrotFrames } from '../data/parrotFrames';
+const { terminalData } = Astro.props;
+const previewTerminalData = terminalData;
+---
+<aside class="terminal-preview" aria-label="Terminal preview">
+  <div class="terminal-preview-window" data-preview-terminal-window>
+    <div class="terminal-bar"><span>revs412@portfolio:~</span><span class="terminal-dots"><button class="terminal-dot-minimize" type="button" data-preview-terminal-minimize aria-label="Minimize terminal preview"></button><button class="terminal-dot-expand" type="button" data-terminal-toggle aria-label="Open terminal mode"></button><button class="terminal-dot-close" type="button" data-preview-terminal-close aria-label="Close and restart terminal preview"></button></span></div>
+    <div class="terminal-body">
+      <div class="terminal-preview-console" data-preview-terminal-console>
+        <div class="terminal-preview-output" data-preview-terminal-output aria-live="polite"></div>
+        <form class="terminal-preview-input-row" data-preview-terminal-form>
+          <label class="prompt" for="preview-terminal-command">$</label>
+          <span class="terminal-input-shell">
+            <input class="terminal-preview-input" id="preview-terminal-command" data-preview-terminal-input autocomplete="off" spellcheck="false" aria-label="Terminal command" />
+            <span class="terminal-input-visual" aria-hidden="true"><span data-preview-terminal-before></span><span class="cursor terminal-input-cursor">█</span><span data-preview-terminal-after></span></span>
+          </span>
+        </form>
+      </div>
+      <pre class="terminal-parrot" data-preview-terminal-parrot hidden aria-label="A dancing parrot"></pre>
+      <canvas class="terminal-cmatrix" data-preview-terminal-cmatrix hidden aria-label="CMatrix animation"></canvas>
+    </div>
+  </div>
+  <div class="terminal-preview-restart" data-preview-terminal-restart hidden aria-live="polite">opening terminal<span class="terminal-preview-restart-dots" aria-hidden="true"></span></div>
+</aside>
+<script is:inline define:vars={{ previewTerminalData, parrotFrames }}>
+  const previewTerminal = document.querySelector('.terminal-preview');
+  const previewConsole = previewTerminal?.querySelector('[data-preview-terminal-console]');
+  const previewOutput = previewTerminal?.querySelector('[data-preview-terminal-output]');
+  const previewForm = previewTerminal?.querySelector('[data-preview-terminal-form]');
+  const previewInput = previewTerminal?.querySelector('[data-preview-terminal-input]');
+  const previewInputBefore = previewTerminal?.querySelector('[data-preview-terminal-before]');
+  const previewInputAfter = previewTerminal?.querySelector('[data-preview-terminal-after]');
+  const previewClose = previewTerminal?.querySelector('[data-preview-terminal-close]');
+  const previewMinimize = previewTerminal?.querySelector('[data-preview-terminal-minimize]');
+  const previewRestart = previewTerminal?.querySelector('[data-preview-terminal-restart]');
+  let previewBootActive = false;
+  let previewBootTimer;
+  const previewTerminalHistory = [];
+  let previewTerminalHistoryIndex = 0;
+  const rememberPreviewTerminalCommand = (command) => {
+    const value = command.trim();
+    if (!value) return;
+    previewTerminalHistory.push(value);
+    previewTerminalHistoryIndex = previewTerminalHistory.length;
+  };
+  const previewParrot = previewTerminal?.querySelector('[data-preview-terminal-parrot]');
+  const previewCMatrixCanvas = previewTerminal?.querySelector('[data-preview-terminal-cmatrix]');
+  let previewParrotActive = false;
+  let previewCMatrixActive = false;
+  let previewCMatrixPlayer;
+  const previewCMatrixMessage = (value) => `<pre class="terminal-cmatrix-message">${previewEscapeHtml(value)}</pre>`;
+  const exitPreviewCMatrix = (broadcast = true) => {
+    if (!previewCMatrixActive) return;
+    previewCMatrixActive = false;
+    previewCMatrixPlayer?.stop();
+    previewCMatrixCanvas?.setAttribute('hidden', '');
+    previewConsole?.removeAttribute('hidden');
+    syncPreviewTerminalCursor();
+    if (broadcast) window.dispatchEvent(new CustomEvent('terminal:cmatrix-exit', { detail: { source: 'preview' } }));
+  };
+  const startPreviewCMatrix = (args) => {
+    const api = window.__revsCMatrix;
+    if (!api || !previewCMatrixCanvas) { previewPrint(previewLine('cmatrix is still loading. Try again in a moment.')); return; }
+    const result = api.parseCMatrix(args);
+    if (result.kind !== 'run') { previewPrint(previewCMatrixMessage(result.text || '')); return; }
+    exitPreviewParrot();
+    previewCMatrixActive = true;
+    previewConsole?.setAttribute('hidden', '');
+    previewCMatrixCanvas.removeAttribute('hidden');
+    previewCMatrixPlayer?.stop();
+    previewCMatrixPlayer = new api.CMatrix(previewCMatrixCanvas, result.options, () => exitPreviewCMatrix());
+    previewCMatrixPlayer.start();
+  };
+  let previewParrotTimer;
+  const renderPreviewParrotFrame = (index) => {
+    if (previewParrot) previewParrot.textContent = parrotFrames[index % parrotFrames.length];
+  };
+  const startPreviewParrot = () => {
+    previewParrotActive = true;
+    previewConsole?.setAttribute('hidden', '');
+    previewParrot?.removeAttribute('hidden');
+    window.clearInterval(previewParrotTimer);
+    let frameIndex = 0;
+    renderPreviewParrotFrame(frameIndex);
+    previewParrotTimer = window.setInterval(() => {
+      frameIndex += 1;
+      renderPreviewParrotFrame(frameIndex);
+    }, 70);
+  };
+  const exitPreviewParrot = () => {
+    previewParrotActive = false;
+    window.clearInterval(previewParrotTimer);
+    previewParrot?.setAttribute('hidden', '');
+    previewConsole?.removeAttribute('hidden');
+  };
+  const previewInitialOutput = previewOutput?.innerHTML ?? '';
+  const syncPreviewTerminalCursor = () => {
+    if (!previewInput) return;
+    const cursor = previewInput.selectionStart ?? previewInput.value.length;
+    if (previewInputBefore) previewInputBefore.textContent = previewInput.value.slice(0, cursor);
+    if (previewInputAfter) previewInputAfter.textContent = previewInput.value.slice(cursor);
+  };
+  const previewEscapeHtml = (value) => value.replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character]);
+  const previewLine = (value) => `<div>${value}</div>`;
+  const previewLink = (href, label) => `<a class="terminal-link" href="${href}">${previewEscapeHtml(label)}</a>`;
+  const previewPrompt = (command) => previewLine(`<span class="prompt">$</span> <span class="cyan">${previewEscapeHtml(command)}</span>`);
+  const previewBootPrompt = (command) => previewPrompt(command).replace('</div>', '<span class="cursor terminal-input-cursor" aria-hidden="true">█</span></div>');
+  const previewPrint = (value) => { if (previewOutput) { previewOutput.insertAdjacentHTML('beforeend', value); if (previewConsole) previewConsole.scrollTop = previewConsole.scrollHeight; } };
+  const previewHelp = () => [
+    previewLine('<span class="cyan">commands</span>'),
+    previewLine('help — show available commands'), previewLine('intro — read the introduction'),
+    previewLine('work / work &lt;slug&gt; — list or open case studies'),
+    previewLine('notes / notes &lt;slug&gt; — list or open notes'),
+    previewLine('principles — list working principles'), previewLine('contact — contact details'), previewLine('parrot — start the local parrot'), previewLine('cmatrix [options] — run the CMatrix terminal simulation'),
+    previewLine('clear — clear this screen'),
+  ].join('');
+  const previewListWork = () => previewTerminalData.work.length ? previewTerminalData.work.map((item) => previewLine(`${previewLink(`${previewTerminalData.base}work/${item.slug}`, item.slug)} — ${previewEscapeHtml(item.title)}`)).join('') : previewLine('No published work items yet.');
+  const previewListNotes = () => previewTerminalData.notes.length ? previewTerminalData.notes.map((item) => previewLine(`${previewLink(`${previewTerminalData.base}notes/${item.slug}`, item.slug)} — ${previewEscapeHtml(item.title)}`)).join('') : previewLine('No published notes yet.');
+  const previewShellWords = (value) => Array.from(value.matchAll(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g), (match) => match[0].replace(/^(?:"|')|(?:"|')$/g, ''));
+  const previewRun = (raw) => {
+    const command = raw.trim();
+    if (!command) return;
+    previewPrint(previewPrompt(command));
+    const [rawName = '', ...args] = previewShellWords(command);
+    const name = rawName.toLowerCase();
+    const slug = args.join('-').toLowerCase();
+    if (name === 'help') previewPrint(previewHelp());
+    else if (name === 'intro') previewPrint(previewLine(previewEscapeHtml(previewTerminalData.intro)));
+    else if (name === 'work' && !slug) previewPrint(previewListWork());
+    else if (name === 'notes' && !slug) previewPrint(previewListNotes());
+    else if (name === 'principles') previewPrint(previewTerminalData.principles.map((item, index) => previewLine(`${index + 1}. ${previewEscapeHtml(item)}`)).join(''));
+    else if (name === 'contact') previewPrint(previewLine(previewLink(`mailto:${previewTerminalData.contact.email}`, previewTerminalData.contact.email)) + (previewTerminalData.contact.discord ? previewLine(`discord: ${previewEscapeHtml(previewTerminalData.contact.discord)}`) : '') + (previewTerminalData.contact.telegram ? previewLine(`telegram: ${previewLink(`https://t.me/${previewTerminalData.contact.telegram.replace(/^@/, '')}`, previewTerminalData.contact.telegram)}`) : '') + previewLine(previewEscapeHtml(previewTerminalData.contact.availability)) + (previewTerminalData.contact.location ? previewLine(previewEscapeHtml(previewTerminalData.contact.location)) : ''));
+    else if (name === 'work') { const item = previewTerminalData.work.find((entry) => entry.slug === slug); previewPrint(item ? previewLine(`<span class="cyan">${previewEscapeHtml(item.title)}</span>`) + previewLine(`problem: ${previewEscapeHtml(item.problem)}`) + previewLine(`constraints: ${previewEscapeHtml(item.constraints)}`) + previewLine(`approach: ${previewEscapeHtml(item.approach)}`) + previewLine(`outcome: ${previewEscapeHtml(item.outcome)}`) + previewLine(previewLink(`${previewTerminalData.base}work/${item.slug}`, 'open full case study →')) : previewLine(`No work item found for "${previewEscapeHtml(slug)}".`)); }
+    else if (name === 'notes') { const item = previewTerminalData.notes.find((entry) => entry.slug === slug); previewPrint(item ? previewLine(`<span class="cyan">${previewEscapeHtml(item.title)}</span>`) + previewLine(previewEscapeHtml(item.summary)) + previewLine(previewLink(`${previewTerminalData.base}notes/${item.slug}`, 'open note →')) : previewLine(`No note found for "${previewEscapeHtml(slug)}".`)); }
+    else if (name === 'parrot') startPreviewParrot();
+    else if (name === 'cmatrix') startPreviewCMatrix(args);
+    else if (name === 'clear') { if (previewOutput) previewOutput.innerHTML = ''; }
+    else previewPrint(previewLine(`Command not found: ${previewEscapeHtml(command)}. Type <span class="cyan">help</span>.`));
+  };
+  const previewPrinciplesOutput = () => previewTerminalData.principles.map((item, index) => previewLine(`${index + 1}. ${previewEscapeHtml(item)}`)).join('');
+  const bootPreviewTerminal = () => {
+    window.clearTimeout(previewBootTimer);
+    exitPreviewParrot();
+    exitPreviewCMatrix(false);
+    previewBootActive = true;
+    if (previewOutput) previewOutput.innerHTML = '';
+    previewForm?.setAttribute('hidden', '');
+    const command = 'principles';
+    let index = 0;
+    const typeNext = () => {
+      if (previewOutput) previewOutput.innerHTML = previewBootPrompt(command.slice(0, index));
+      if (index < command.length) {
+        index += 1;
+        previewBootTimer = window.setTimeout(typeNext, 70);
+        return;
+      }
+      previewBootTimer = window.setTimeout(() => {
+        if (previewOutput) {
+          previewOutput.innerHTML = previewPrompt(command);
+          previewOutput.insertAdjacentHTML('beforeend', previewPrinciplesOutput());
+        }
+        previewBootActive = false;
+        previewForm?.removeAttribute('hidden');
+        syncPreviewTerminalCursor();
+      }, 400);
+    };
+    typeNext();
+  };
+  window.addEventListener('terminal:command', (event) => {
+    const detail = event instanceof CustomEvent ? event.detail : undefined;
+    if (detail?.source === 'full') {
+      rememberPreviewTerminalCommand(detail.command);
+      previewRun(detail.command);
+    }
+  });
+  window.addEventListener('terminal:reset', () => {
+    window.clearTimeout(previewBootTimer);
+    previewBootActive = false;
+    exitPreviewParrot();
+    if (previewOutput) previewOutput.innerHTML = previewInitialOutput;
+    if (previewInput) previewInput.value = '';
+    syncPreviewTerminalCursor();
+  });
+  window.addEventListener('terminal:boot-start', bootPreviewTerminal);
+  window.addEventListener('terminal:parrot-exit', exitPreviewParrot);
+  window.addEventListener('terminal:cmatrix-exit', (event) => {
+    const detail = event instanceof CustomEvent ? event.detail : undefined;
+    if (detail?.source !== 'preview') exitPreviewCMatrix(false);
+  });
+  window.addEventListener('terminal:restart-pending', () => {
+    previewTerminal?.classList.add('is-restarting');
+    if (previewRestart) previewRestart.hidden = false;
+  });
+  window.addEventListener('terminal:restart-complete', () => {
+    previewTerminal?.classList.remove('is-restarting');
+    if (previewRestart) previewRestart.hidden = true;
+  });
+  window.addEventListener('terminal:minimize-pending', () => previewTerminal?.classList.add('is-minimizing'));
+  window.addEventListener('terminal:minimize-complete', () => {
+    previewTerminal?.classList.remove('is-minimizing');
+    previewTerminal?.classList.add('is-restoring');
+    window.setTimeout(() => previewTerminal?.classList.remove('is-restoring'), 180);
+  });
+  previewMinimize?.addEventListener('click', () => window.dispatchEvent(new Event('terminal:minimize-request')));
+  previewClose?.addEventListener('click', () => window.dispatchEvent(new Event('terminal:reset-request')));
+  previewForm?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    if (previewBootActive) return;
+    const value = previewInput?.value ?? '';
+    rememberPreviewTerminalCommand(value);
+    previewRun(value);
+    if (value.trim()) window.dispatchEvent(new CustomEvent('terminal:command', { detail: { command: value, source: 'preview' } }));
+    if (previewInput) previewInput.value = '';
+    syncPreviewTerminalCursor();
+  });
+  previewInput?.addEventListener('input', syncPreviewTerminalCursor);
+  previewInput?.addEventListener('select', syncPreviewTerminalCursor);
+  previewInput?.addEventListener('keyup', syncPreviewTerminalCursor);
+  previewInput?.addEventListener('click', syncPreviewTerminalCursor);
+  const focusPreviewTerminal = () => previewInput?.focus({ preventScroll: true });
+  const updatePreviewInput = (value, cursor) => {
+    if (!previewInput) return;
+    previewInput.value = value;
+    previewInput.setSelectionRange(cursor, cursor);
+    syncPreviewTerminalCursor();
+  };
+  document.addEventListener('keydown', (event) => {
+    const fullTerminalOverlay = document.querySelector('#terminal-mode');
+    if (!previewInput || previewTerminal?.classList.contains('is-restarting') || previewTerminal?.classList.contains('is-minimizing') || previewTerminal?.classList.contains('is-restoring') || (fullTerminalOverlay && !fullTerminalOverlay.hasAttribute('hidden')) || event.defaultPrevented) return;
+    if (previewBootActive) {
+      event.preventDefault();
+      return;
+    }
+    if (previewParrotActive) {
+      if (event.key.toLowerCase() === 'q' || (event.ctrlKey && event.key.toLowerCase() === 'c')) {
+        event.preventDefault();
+        window.dispatchEvent(new Event('terminal:parrot-exit'));
+      }
+      return;
+    }
+    if (previewCMatrixActive) {
+      event.preventDefault();
+      previewCMatrixPlayer?.key(event);
+      return;
+    }
+    if (event.ctrlKey || event.metaKey || event.altKey) return;
+    const start = previewInput.selectionStart ?? previewInput.value.length;
+    const end = previewInput.selectionEnd ?? start;
+    const value = previewInput.value;
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      previewForm?.requestSubmit();
+      focusPreviewTerminal();
+    } else if (event.key.length === 1) {
+      event.preventDefault();
+      const next = `${value.slice(0, start)}${event.key}${value.slice(end)}`;
+      updatePreviewInput(next, start + event.key.length);
+      focusPreviewTerminal();
+    } else if (event.key === 'Backspace' && (start || end)) {
+      event.preventDefault();
+      const nextStart = start === end ? start - 1 : start;
+      updatePreviewInput(`${value.slice(0, nextStart)}${value.slice(end)}`, nextStart);
+      focusPreviewTerminal();
+    } else if (event.key === 'Delete' && (start !== end || start < value.length)) {
+      event.preventDefault();
+      const nextEnd = start === end ? end + 1 : end;
+      updatePreviewInput(`${value.slice(0, start)}${value.slice(nextEnd)}`, start);
+      focusPreviewTerminal();
+    } else if (event.key === 'ArrowUp' && previewTerminalHistory.length) {
+      event.preventDefault();
+      previewTerminalHistoryIndex = Math.max(0, previewTerminalHistoryIndex - 1);
+      updatePreviewInput(previewTerminalHistory[previewTerminalHistoryIndex], previewTerminalHistory[previewTerminalHistoryIndex].length);
+      focusPreviewTerminal();
+    } else if (event.key === 'ArrowDown' && previewTerminalHistory.length) {
+      event.preventDefault();
+      previewTerminalHistoryIndex = Math.min(previewTerminalHistory.length, previewTerminalHistoryIndex + 1);
+      const next = previewTerminalHistoryIndex === previewTerminalHistory.length ? '' : previewTerminalHistory[previewTerminalHistoryIndex];
+      updatePreviewInput(next, next.length);
+      focusPreviewTerminal();
+    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight' || event.key === 'Home' || event.key === 'End') {
+      event.preventDefault();
+      const nextCursor = event.key === 'ArrowLeft' ? Math.max(0, start - 1) : event.key === 'ArrowRight' ? Math.min(value.length, end + 1) : event.key === 'Home' ? 0 : value.length;
+      previewInput.setSelectionRange(nextCursor, nextCursor);
+      syncPreviewTerminalCursor();
+      focusPreviewTerminal();
+    }
+  });
+  window.requestAnimationFrame(() => { if (!previewBootActive) focusPreviewTerminal(); });
+</script>

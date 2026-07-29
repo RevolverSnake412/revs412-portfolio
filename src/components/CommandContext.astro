@@ -1,0 +1,41 @@
+---
+const { homeCommand } = Astro.props;
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
+const pathname = basePath && basePath !== '/' && Astro.url.pathname.startsWith(basePath)
+  ? Astro.url.pathname.slice(basePath.length)
+  : Astro.url.pathname;
+const cleanPath = pathname.replace(/\/+$/, '') || '/';
+const segments = cleanPath.split('/').filter(Boolean);
+const workIndex = segments.lastIndexOf('work');
+const notesIndex = segments.lastIndexOf('notes');
+const isWork = workIndex >= 0;
+const isNotes = notesIndex >= 0;
+const detailIndex = isWork ? workIndex : isNotes ? notesIndex : -1;
+const slug = detailIndex >= 0 && segments[detailIndex + 1] ? decodeURIComponent(segments[detailIndex + 1]) : undefined;
+const area = isWork ? 'work' : isNotes ? 'notes' : segments.includes('principles') ? 'principles' : segments.includes('contact') ? 'contact' : undefined;
+const isDetail = Boolean(area && slug);
+const location = area ? `~/${area}${isDetail ? `/${slug}` : ''}` : '~';
+const generatedCommand = area === 'work' && isDetail
+  ? `cat ${slug}.txt`
+  : area === 'notes' && isDetail
+    ? `cat ${slug}.md`
+    : area === 'work' || area === 'notes'
+      ? 'cat index.txt && ls'
+      : area === 'principles'
+        ? 'cat principles.txt'
+        : area === 'contact'
+          ? 'cat contact.txt'
+          : homeCommand;
+const homeSeparator = homeCommand.indexOf('$');
+const prompt = `revs412@portfolio:${location}$`;
+const commandText = area ? generatedCommand : homeCommand.slice(homeSeparator + 1).trim();
+const fullCommand = `${prompt} ${commandText}`;
+const fallback = !area && cleanPath !== '/';
+---
+<div class="shell command-context">
+  <div class:list={["command-line", { "command-line-error": fallback }]} title={fullCommand} aria-label={fullCommand}>
+    <span class="command-prompt"><span class="command-identity">revs412@portfolio</span><span class="command-colon">:</span><span class="command-path">{location}</span><span class="command-dollar">$</span></span>
+    <span class="command-text">{commandText}</span>
+    {fallback && <span class="command-status" role="status">context unavailable</span>}
+  </div>
+</div>

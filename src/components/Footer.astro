@@ -1,0 +1,6 @@
+---
+const { email } = Astro.props;
+---
+<footer class="site-footer">
+  <div class="shell footer-inner"><a href={`mailto:${email}`}>{email}</a></div>
+</footer>

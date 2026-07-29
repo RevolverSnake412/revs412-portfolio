@@ -1,0 +1,24 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import NoteIndexEntry from '../../components/NoteIndexEntry.astro';
+import EmptyState from '../../components/EmptyState.astro';
+const notes = (await getCollection('notes', ({ data }) => data.published)).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+---
+<BaseLayout title="Notes · revs412" description="Technical field notes about systems, troubleshooting, and decisions.">
+  <main class="shell page">
+    <header class="page-header"><p class="eyebrow">personal technical knowledge base</p><h1>Notes</h1><p>A working collection of practical notes, commands, troubleshooting steps, configuration references, and lessons from systems work, homelab projects, and hands-on learning.</p></header>
+    <section class="work-guidance" aria-labelledby="notes-guidance-title">
+      <h2 id="notes-guidance-title">How I use these notes</h2>
+      <p>Most notes start as working material. They are kept here so a useful fix, decision, or reference can be found again, reused, and improved over time.</p>
+    </section>
+    <section class="notes-scope" aria-labelledby="notes-scope-title">
+      <h2 id="notes-scope-title">Scope</h2>
+      <ul><li>technical references worth keeping searchable</li><li>repeatable troubleshooting and recovery notes</li><li>commands, configuration, and deployment reminders</li><li>learning notes from labs and practical experiments</li></ul>
+    </section>
+    <section class="notes-index-section" aria-labelledby="notes-index-title">
+      <div class="work-index-heading"><p class="eyebrow">chronological index</p><h2 id="notes-index-title">Latest notes</h2></div>
+      {notes.length ? <div class="notes-index">{notes.map((item) => <NoteIndexEntry item={item} />)}</div> : <EmptyState>No published notes yet. Add a Markdown or MDX file under <code>src/content/notes/</code> to start the index.</EmptyState>}
+    </section>
+  </main>
+</BaseLayout>

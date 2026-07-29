@@ -1,0 +1,12 @@
+---
+const { item } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const formattedDate = item.data.date.toLocaleDateString('en', { year: 'numeric', month: 'short', day: 'numeric' });
+---
+<article class="work-index-entry">
+  <h2>{item.data.title}</h2>
+  <p class="work-index-meta"><span>Type:</span> {item.data.type}</p>
+  <p class="work-index-meta"><span>Project date:</span> {formattedDate}</p>
+  <p class="work-index-summary">{item.data.summary}</p>
+  <a class="work-index-open" href={`${base}work/${item.data.slug}`}>Open: View work →</a>
+</article>
