@@ -283,6 +283,15 @@ const previewTerminalData = {
   const minimumWidth = 360;
   const minimumHeight = 280;
   const clamp = (value: number, minimum: number, maximum: number) => Math.min(Math.max(value, minimum), maximum);
+  const windowSizeLimits = (desktop: DOMRect) => {
+    const frame = isCompactViewport() ? 12 : 24;
+    return {
+      minWidth: Math.min(isCompactViewport() ? 220 : minimumWidth, desktop.width - frame),
+      maxWidth: desktop.width - frame,
+      minHeight: Math.min(isCompactViewport() ? 150 : minimumHeight, desktop.height - frame),
+      maxHeight: desktop.height - frame,
+    };
+  };
   const terminalGrid = () => {
     if (!vimTerminalContent) return { column: 9, row: 23, widthFrame: 26, heightFrame: 77 };
     const styles = window.getComputedStyle(vimTerminalContent);
@@ -320,8 +329,9 @@ const previewTerminalData = {
     if (!vimWindow || !vimWindowBody || !vimDesktop) return;
     const desktop = vimDesktop.getBoundingClientRect();
     const grid = terminalGrid();
-    const width = snapToTerminalGrid(geometry.width, Math.min(minimumWidth, desktop.width - 24), desktop.width - 24, grid.column, grid.widthFrame);
-    const height = snapToTerminalGrid(geometry.height, Math.min(minimumHeight, desktop.height - 24), desktop.height - 24, grid.row, grid.heightFrame);
+    const limits = windowSizeLimits(desktop);
+    const width = snapToTerminalGrid(geometry.width, limits.minWidth, limits.maxWidth, grid.column, grid.widthFrame);
+    const height = snapToTerminalGrid(geometry.height, limits.minHeight, limits.maxHeight, grid.row, grid.heightFrame);
     const left = clamp(geometry.left, 0, Math.max(0, desktop.width - width));
     const top = clamp(geometry.top, 0, Math.max(0, desktop.height - height));
     lastFloatingWindow = { left, top, width, height };
@@ -337,6 +347,15 @@ const previewTerminalData = {
   const openDefaultFloatingWindow = () => {
     if (!vimDesktop) return;
     const desktop = vimDesktop.getBoundingClientRect();
+    if (isCompactViewport()) {
+      applyFloatingWindow({
+        left: Math.round(desktop.width * .14),
+        top: Math.round(desktop.height * .13),
+        width: desktop.width * .72,
+        height: desktop.height * .72,
+      });
+      return;
+    }
     applyFloatingWindow({
       left: Math.max(24, Math.round(desktop.width * .09)),
       top: Math.max(24, Math.round(desktop.height * .09)),
@@ -345,15 +364,16 @@ const previewTerminalData = {
     });
   };
   window.requestAnimationFrame(() => {
+    openDefaultFloatingWindow();
     if (isCompactViewport()) setVimWindowVisible(false, 'minimized');
-    else openDefaultFloatingWindow();
   });
   const enterFloatingWindow = () => {
     if (!vimWindow || !vimWindowBody || !vimDesktop || isFloating() || isMaximized()) return;
     const desktop = vimDesktop.getBoundingClientRect();
     const current = vimWindowBody.getBoundingClientRect();
-    const width = clamp(Math.round(current.width * .82), Math.min(minimumWidth, desktop.width - 24), desktop.width - 24);
-    const height = clamp(Math.round(current.height * .82), Math.min(minimumHeight, desktop.height - 24), desktop.height - 24);
+    const limits = windowSizeLimits(desktop);
+    const width = clamp(Math.round(current.width * .82), limits.minWidth, limits.maxWidth);
+    const height = clamp(Math.round(current.height * .82), limits.minHeight, limits.maxHeight);
     applyFloatingWindow({ left: (desktop.width - width) / 2, top: (desktop.height - height) / 2, width, height });
   };
   const maximizeWindow = () => {
@@ -418,12 +438,14 @@ const previewTerminalData = {
     window.addEventListener('pointerup', stop, { once: true });
   });
   document.querySelectorAll<HTMLElement>('[data-vim-resize]').forEach((handle) => handle.addEventListener('pointerdown', (event) => {
-    if (isCompactViewport() || !vimWindowBody || !vimDesktop || !isFloating() || event.button !== 0) return;
+    if (!vimWindowBody || !vimDesktop || !isFloating() || event.button !== 0) return;
     event.preventDefault();
     const edge = handle.dataset.vimResize ?? '';
     const desktop = vimDesktop.getBoundingClientRect();
+    const limits = windowSizeLimits(desktop);
     const startRect = vimWindowBody.getBoundingClientRect();
     const start = { left: startRect.left - desktop.left, top: startRect.top - desktop.top, width: startRect.width, height: startRect.height };
+    handle.setPointerCapture?.(event.pointerId);
     const move = (moveEvent: PointerEvent) => {
       const deltaX = moveEvent.clientX - event.clientX;
       const deltaY = moveEvent.clientY - event.clientY;
@@ -433,22 +455,26 @@ const previewTerminalData = {
       let top = start.top;
       let width = start.width;
       let height = start.height;
-      if (edge.includes('right')) width = clamp(start.width + deltaX, Math.min(minimumWidth, desktop.width - start.left - 12), desktop.width - start.left - 12);
-      if (edge.includes('bottom')) height = clamp(start.height + deltaY, Math.min(minimumHeight, desktop.height - start.top - 12), desktop.height - start.top - 12);
+      if (edge.includes('right')) width = clamp(start.width + deltaX, Math.min(limits.minWidth, desktop.width - start.left - 12), desktop.width - start.left - 12);
+      if (edge.includes('bottom')) height = clamp(start.height + deltaY, Math.min(limits.minHeight, desktop.height - start.top - 12), desktop.height - start.top - 12);
       const grid = terminalGrid();
       if (edge.includes('left')) {
-        const rawLeft = clamp(start.left + deltaX, 12, right - Math.min(minimumWidth, right - 12));
-        width = snapToTerminalGrid(right - rawLeft, Math.min(minimumWidth, right - 12), right - 12, grid.column, grid.widthFrame);
+        const rawLeft = clamp(start.left + deltaX, 12, right - Math.min(limits.minWidth, right - 12));
+        width = snapToTerminalGrid(right - rawLeft, Math.min(limits.minWidth, right - 12), right - 12, grid.column, grid.widthFrame);
         left = right - width;
       }
       if (edge.includes('top')) {
-        const rawTop = clamp(start.top + deltaY, 12, bottom - Math.min(minimumHeight, bottom - 12));
-        height = snapToTerminalGrid(bottom - rawTop, Math.min(minimumHeight, bottom - 12), bottom - 12, grid.row, grid.heightFrame);
+        const rawTop = clamp(start.top + deltaY, 12, bottom - Math.min(limits.minHeight, bottom - 12));
+        height = snapToTerminalGrid(bottom - rawTop, Math.min(limits.minHeight, bottom - 12), bottom - 12, grid.row, grid.heightFrame);
         top = bottom - height;
       }
       applyFloatingWindow({ left, top, width, height });
     };
-    const stop = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', stop); };
+    const stop = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', stop);
+      if (handle.hasPointerCapture?.(event.pointerId)) handle.releasePointerCapture(event.pointerId);
+    };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', stop, { once: true });
   }));
