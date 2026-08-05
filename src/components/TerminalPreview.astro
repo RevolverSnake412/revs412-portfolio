@@ -46,6 +46,7 @@ const previewTerminalData = terminalData;
   };
   const previewParrot = previewTerminal?.querySelector('[data-preview-terminal-parrot]');
   const previewCMatrixCanvas = previewTerminal?.querySelector('[data-preview-terminal-cmatrix]');
+  const isCompactViewport = () => window.matchMedia('(max-width: 760px)').matches;
   let previewParrotActive = false;
   let previewCMatrixActive = false;
   let previewCMatrixPlayer;
@@ -227,7 +228,7 @@ const previewTerminalData = terminalData;
   };
   document.addEventListener('keydown', (event) => {
     const fullTerminalOverlay = document.querySelector('#terminal-mode');
-    if (!previewInput || previewTerminal?.classList.contains('is-restarting') || previewTerminal?.classList.contains('is-minimizing') || previewTerminal?.classList.contains('is-restoring') || (fullTerminalOverlay && !fullTerminalOverlay.hasAttribute('hidden')) || event.defaultPrevented) return;
+    if (isCompactViewport() || !previewInput || previewTerminal?.classList.contains('is-restarting') || previewTerminal?.classList.contains('is-minimizing') || previewTerminal?.classList.contains('is-restoring') || (fullTerminalOverlay && !fullTerminalOverlay.hasAttribute('hidden')) || event.defaultPrevented) return;
     if (previewBootActive) {
       event.preventDefault();
       return;
@@ -286,5 +287,5 @@ const previewTerminalData = terminalData;
       focusPreviewTerminal();
     }
   });
-  window.requestAnimationFrame(() => { if (!previewBootActive) focusPreviewTerminal(); });
+  window.requestAnimationFrame(() => { if (!previewBootActive && !isCompactViewport()) focusPreviewTerminal(); });
 </script>
