@@ -1,5 +1,6 @@
 ---
 const { name } = Astro.props;
+const brandMark = name.slice(0, 1);
 const path = Astro.url.pathname;
 const base = import.meta.env.BASE_URL;
 const links = [
@@ -9,7 +10,7 @@ const links = [
 ---
 <header class="site-header">
   <nav class="nav shell" aria-label="Main navigation">
-    <a class="brand" href={base}>{name}</a>
+    <a class="brand" href={base} aria-label={name}>{brandMark}</a>
     <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-links">Menu</button>
     <div class="nav-links" id="site-links">
       {links.map((link) => <a href={link.href} aria-current={path === link.path || path.startsWith(`${link.path}/`) ? 'page' : undefined}>{link.label}</a>)}

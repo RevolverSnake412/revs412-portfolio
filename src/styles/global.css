@@ -36,7 +36,7 @@ img { max-width: 100%; height: auto; }
 
 .site-header { position: sticky; z-index: 10; top: 0; border-bottom: 2px solid var(--border); background: color-mix(in srgb, var(--nav) 94%, transparent); backdrop-filter: blur(12px); }
 .nav { min-height: 72px; display: flex; align-items: center; gap: 28px; }
-.brand { flex: none; color: var(--green); font: 800 1.45rem var(--mono); letter-spacing: -.05em; }
+.brand { display: inline-grid; flex: none; place-items: center; width: 36px; height: 36px; border: 1px dashed var(--green); background: var(--bg); color: var(--green); font: 800 1.85rem/.9 var(--mono); letter-spacing: -.1em; }
 .brand:hover { color: var(--green); }
 .nav-toggle { display: none; margin-left: auto; color: var(--text); border: 1px solid var(--border); background: var(--surface); padding: 8px 10px; }
 .nav-links { display: flex; align-items: center; gap: clamp(15px, 2.4vw, 32px); margin-left: auto; font: .92rem var(--mono); }
