@@ -1,7 +1,10 @@
 ---
+resume: true
 title: "Dolibarr to Odoo Migration Tooling"
 slug: "dolibarr-to-odoo-migration-tooling"
 summary: "Field notes from designing migration tooling for moving business data from Dolibarr into Odoo while keeping product, customer, quotation, invoice, and stock data understandable and verifiable."
+resumeSummary: >-
+  Designed migration tooling and validation direction for moving business records from Dolibarr into Odoo. The work addresses product, customer, supplier, quotation, invoice, and stock data; field mapping and normalization; stable external IDs; duplicate prevention; relationship preservation; and reconciliation after import. Rather than treating migration as a one-time export, it frames it as a controlled data transition where references must remain traceable, quantities and statuses must be checked, and exceptions must be visible before they become operational errors.
 category: "Business Systems"
 tags:
   - dolibarr

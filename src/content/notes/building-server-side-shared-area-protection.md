@@ -1,7 +1,10 @@
 ---
+resume: false
 title: "Building Server-Side Shared-Area Protection"
 slug: "building-server-side-shared-area-protection"
 summary: "Field notes from building a server-side extension that protects shared areas from unauthorized changes while preserving permitted user actions."
+resumeSummary: >-
+  Developed a server-side protection extension for shared areas, designed to block unauthorized changes without preventing legitimate use of the environment. The design defines protected regions, intercepts break, placement, and interaction events, applies permission checks, sends useful chat feedback, and handles dependent objects whose behaviour is linked to a protected parent. It also records build and debugging issues encountered while refining rules, showing how event-driven authorization needs to account for edge cases rather than only the obvious action.
 category: "Server-side Extensions"
 tags:
   - server-side-extension

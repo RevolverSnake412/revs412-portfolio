@@ -1,7 +1,10 @@
 ---
+client: ""
 title: "GOPC Business Website"
 slug: "gopc-business-website"
 summary: "A practical business website and product catalogue foundation for a local computer hardware brand."
+resumeSummary: >-
+  Built the initial public web foundation for a local computer-hardware business, covering a product catalogue structure, public pages, contact and location visibility, domain and hosting direction, HTTPS, and professional email setup. The implementation deliberately avoided treating visual completion as the goal: product data, stock, quotations, and invoices were planned to evolve into a structured business-system workflow rather than remain duplicated static content. The project established an affordable, maintainable starting point with room for future inventory-backed product updates and operational use.
 problem: "The business needed a credible public website that could present products, contact details, location information, opening hours, and future catalogue updates without forcing a complex e-commerce system too early."
 constraints: "The setup had to stay affordable, simple to maintain, easy to update, and suitable for later integration with inventory and quotation workflows."
 approach: "Build the public website foundation first: domain, hosting, SSL, business email, page structure, product catalogue direction, contact paths, location visibility, and a customer flow that can later connect to structured business data."

@@ -1,7 +1,10 @@
 ---
+resume: true
 title: "Building a Full-Stack Property Listing Platform"
 slug: "building-a-full-stack-property-listing-platform"
 summary: "Field notes from building an AirBnB-style property listing application, focused on backend models, database relationships, API structure, frontend rendering, and deployment fundamentals."
+resumeSummary: >-
+  Documented the construction of a full-stack property-listing application from its data model through its public interface. The work covers relationships between listings, users, images, locations, availability, and bookings; API and serialization direction; frontend cards, detail views, filtering, and state handling; and the deployment concerns needed to make the system usable beyond a local prototype. The emphasis is on designing data relationships and API boundaries early so interface features remain consistent with the underlying business rules.
 category: "Full-Stack Development"
 tags:
   - full-stack

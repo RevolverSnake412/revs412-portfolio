@@ -1,8 +1,11 @@
 ---
+client: ""
 title: "WireGuard Admin Access Manager"
 slug: "wireguard-admin-access-manager"
 type: "Infrastructure / access management"
 summary: "A WireGuard access-management tool design for provisioning, reviewing, and revoking technician and administrator VPN access in a segmented network."
+resumeSummary: >-
+  Designed an administrative access-management tool around WireGuard for a segmented environment where public services, VPN entry points, private networks, and sensitive systems have distinct trust boundaries. The proposed workflow manages the full peer lifecycle, provisioning, access scope, review, expiry, revocation, and configuration generation, while limiting technicians and administrators to the subnets and services they actually need. It pairs the VPN model with DMZ placement, private-network separation, auditable access records, and CLI-oriented operations so remote administration remains deliberate rather than a shared-network shortcut.
 problem: "Technician and administrator VPN access needed a controlled workflow instead of unmanaged configuration files, unnamed peers, and uncertain revocation history."
 constraints: "The design had to work with WireGuard's device-based model, keep sensitive services on private networks, support temporary access, and avoid treating a VPN alone as a complete identity platform."
 approach: "Designed a small management layer around WireGuard peer ownership, device records, expiry dates, generated client configurations, revocation, firewall scope, and a DMZ-to-private-network access model."

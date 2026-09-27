@@ -1,7 +1,10 @@
 ---
+resume: false
 title: "AdGuard Home on OpenWrt"
 slug: "adguard-home-on-openwrt"
 summary: "Field notes from running AdGuard Home on OpenWrt, including DNS ownership, port 53 conflicts, resolver failures, and practical troubleshooting."
+resumeSummary: >-
+  Documented the design and troubleshooting of running AdGuard Home on an OpenWrt router as the network DNS filtering layer. The note maps DNS ownership between AdGuard Home, dnsmasq, DHCP advertisements, local names, upstream resolvers, firewall rules, and LAN clients, with emphasis on port 53 conflicts and failure isolation. It provides a repeatable way to verify the full resolver path, recover from broken local resolution, and preserve a clear division of responsibility between routing, DHCP, and DNS filtering.
 category: "Networking"
 tags:
   - adguard-home

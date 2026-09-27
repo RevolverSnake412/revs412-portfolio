@@ -1,7 +1,10 @@
 ---
+resume: false
 title: "ARM VPS Troubleshooting for Dedicated Services"
 slug: "arm-vps-troubleshooting-for-dedicated-services"
 summary: "Field notes from troubleshooting ARM-based VPS hosting for dedicated services, covering instance availability, boot issues, Docker architecture mismatches, runtime problems, and recovery checks."
+resumeSummary: >-
+  Created a structured troubleshooting reference for ARM-based VPS deployments hosting dedicated services. It separates provider availability, boot-volume state, SSH reachability, public-IP and security-group configuration, local listening ports, Docker image architecture, runtime logs, and application health so a failed service is not treated as one vague outage. The workflow supports evidence-led recovery: confirm the instance and network layers first, then validate the operating system, container compatibility, process state, and external reachability.
 category: "Server Hosting"
 tags:
   - arm

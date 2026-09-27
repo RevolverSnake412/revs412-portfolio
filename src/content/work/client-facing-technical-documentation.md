@@ -1,7 +1,10 @@
 ---
+client: ""
 title: "Client-Facing Technical Documentation"
 slug: "client-facing-technical-documentation"
 summary: "Simplified technical documentation, diagrams, and equipment planning materials for a business infrastructure project."
+resumeSummary: >-
+  Produced client-facing planning material for a business infrastructure initiative spanning application workflows, network equipment, routers, mini PCs, VPN access, server direction, and SIM-bank planning. The work translated implementation-heavy concerns into project briefs, architecture diagrams, equipment lists, and decision-ready PDFs that a non-technical stakeholder could use without losing the important technical boundaries. It separated client communication from internal engineering detail, identified unresolved choices and hardware responsibilities, and made scope, dependencies, and operating assumptions visible before implementation.
 problem: "The client needed to understand a complex technical project involving software, hardware, network infrastructure, servers, and operational workflows without being overloaded by implementation-level details."
 constraints: "The documentation had to stay clear for a non-technical decision-maker, avoid unnecessary internal engineering detail, and still be accurate enough to support planning, budgeting, hardware selection, and project discussion."
 approach: "Created simplified project briefs, architecture explanations, equipment lists, network diagrams, and client-facing PDFs that translated the technical system into understandable project materials."

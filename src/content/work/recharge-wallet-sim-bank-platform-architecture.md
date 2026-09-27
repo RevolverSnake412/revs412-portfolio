@@ -1,7 +1,10 @@
 ---
+client: ""
 title: "Recharge Wallet / SIM-Bank Platform Architecture"
 slug: "recharge-wallet-sim-bank-platform-architecture"
 summary: "A planned merchant recharge platform architecture combining wallet logic, mobile app flows, admin operations, and SIM-bank based telecom recharge infrastructure."
+resumeSummary: >-
+  Architected a phased merchant recharge platform in which operators maintain wallet balances, request customer mobile recharges through an app, and receive controlled status updates from recharge infrastructure. The design covers mobile and admin workflows, backend balance validation and accounting, SIM-bank or SIM-pool hardware, VPN and network access, monitoring, exception handling, and operational controls. It intentionally treats operator authorization, hardware reliability, financial state changes, security, and support procedures as prerequisites to scaling—not details to add after the application is built.
 problem: "The client needed a way for merchants to perform mobile recharges through an app-based wallet system, while the operational recharge execution would rely on controlled SIM-bank infrastructure instead of a direct operator API in the first version."
 constraints: "The architecture had to account for merchant wallet balances, manual funding validation, telecom operator differences, SIM-bank hardware limits, secure remote access, admin control, auditability, and legal/operator authorization boundaries."
 approach: "Designed the high-level system architecture around merchant and admin workflows, wallet balance management, recharge requests, SIM-bank operations, network/server infrastructure, VPN access, and phased deployment planning."

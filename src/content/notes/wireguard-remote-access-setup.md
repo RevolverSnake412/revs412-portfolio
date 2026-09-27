@@ -1,7 +1,10 @@
 ---
+resume: false
 title: "WireGuard Remote Access Setup"
 slug: "wireguard-remote-access-setup"
 summary: "Field notes from setting up WireGuard remote access for a home/lab network, including peer configuration, firewall rules, QR setup, and external testing."
+resumeSummary: >-
+  Documented a WireGuard remote-access deployment for a home or lab network, including server and peer configuration, key management, allowed-address design, firewall rules, client QR provisioning, and testing from outside the LAN. The note follows the connection path from endpoint DNS or public address through UDP exposure and handshake verification to access of approved internal resources. It also records common failure modes and security decisions, making remote administration repeatable without confusing a successful VPN handshake with correct route and policy behaviour.
 category: "Networking"
 tags:
   - wireguard

@@ -1,7 +1,10 @@
 ---
+resume: false
 title: "Implementing Formatted Output in C"
 slug: "implementing-formatted-output-in-c"
 summary: "Field notes from rebuilding a minimal printf-style function in C to understand variadic arguments, format parsing, character output, conversion handling, and low-level edge cases."
+resumeSummary: >-
+  Implemented a minimal printf-style formatter in C to understand how formatted output is assembled at a low level. The project covers variadic argument handling, format-string scanning, conversion dispatch, character and string output, integer formatting, return-value accounting, and malformed or unsupported input. It focuses on building the parser and output primitives in small testable pieces, exposing the interaction between C types, memory-safe iteration through arguments, and the edge cases hidden behind a familiar standard-library call.
 category: "Systems Programming"
 tags:
   - c

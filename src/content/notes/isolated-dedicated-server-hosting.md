@@ -1,7 +1,10 @@
 ---
+resume: false
 title: "Isolated Dedicated-Server Hosting"
 slug: "isolated-dedicated-server-hosting"
 summary: "Field notes from hosting a dedicated service at home behind an isolated VLAN, using an OpenWrt router, managed-switch tagging, and a Proxmox server."
+resumeSummary: >-
+  Designed a home-hosted dedicated-service environment that keeps externally exposed workloads separate from the primary LAN. The architecture uses OpenWrt routing, managed-switch VLAN tagging, router-on-a-stick configuration, firewall zones, and a Proxmox host to define physical and logical boundaries between services, administration, and trusted devices. The note covers addressing, port exposure, traffic rules, and host placement, demonstrating how segmentation limits the effect of a compromised or unstable public-facing workload without making the environment impossible to operate.
 category: "Server Hosting"
 tags:
   - dedicated-server

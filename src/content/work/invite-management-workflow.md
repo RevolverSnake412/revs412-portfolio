@@ -1,7 +1,10 @@
 ---
+client: ""
 title: "Invite Management Workflow"
 slug: "invite-management-workflow"
 summary: "A controlled invitation workflow designed to reduce manual moderation, track invite ownership, and make access management more auditable."
+resumeSummary: >-
+  Designed a controlled invitation workflow for a private online environment where staff could create access links without losing accountability. The design replaces untracked manual links with rules around authorization, ownership, usage, expiry, revocation, and event logging, so administrators can understand who created an invitation and what happened to it. It focuses on making access management auditable and manageable at operational scale while retaining staff convenience and a clear escalation path for suspicious or misused links.
 problem: "The existing invite process needed stronger control, clearer ownership, and better visibility so staff could create invitations without losing track of who created what and who joined through which invite."
 constraints: "The workflow had to stay simple for staff, prevent unmanaged invitations, support limited-use invite links, track invite ownership, handle edge cases, and avoid exposing unnecessary admin complexity to normal users."
 approach: "Designed an invite-management automation flow with staff-controlled invite creation, invite tracking, usage visibility, manual-invite detection, fallback communication handling, and administrative reporting."

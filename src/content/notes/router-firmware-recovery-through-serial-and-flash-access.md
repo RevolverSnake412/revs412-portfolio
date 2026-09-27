@@ -1,7 +1,10 @@
 ---
+resume: true
 title: "Router Firmware Recovery Through Serial and Flash Access"
 slug: "router-firmware-recovery-through-serial-and-flash-access"
 summary: "Field notes from troubleshooting and recovering router firmware/storage failures, including EdgeRouter X serial console recovery, NAND/MTD corruption symptoms, bootloader access, and external flash recovery direction."
+resumeSummary: >-
+  Created a recovery reference for router failures involving corrupted firmware or storage, unstable configuration persistence, and incomplete boot behaviour. The procedure covers observing early symptoms, distinguishing reset behaviour from flash failure, accessing an EdgeRouter X through USB-TTL serial, using bootloader or failsafe paths, interpreting NAND and MTD bad-block signs, and deciding when external flash recovery is warranted. It prioritizes evidence before destructive recovery steps, preserving a path back to the device when ordinary web or SSH administration is no longer available.
 category: "Hardware Recovery"
 tags:
   - router

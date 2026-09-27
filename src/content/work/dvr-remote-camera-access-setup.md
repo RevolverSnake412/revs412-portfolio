@@ -1,7 +1,10 @@
 ---
+client: ""
 title: "DVR Remote Camera Access Setup"
 slug: "dvr-remote-camera-access-setup"
 summary: "A field IT setup for enabling remote access to a DVR camera system through network configuration, DDNS direction, and client-side access testing."
+resumeSummary: >-
+  Planned and validated remote access for a DVR-based camera system by tracing the complete path between the recorder, local network, router, public connection, and viewing device. The work covered DVR addressing and service ports, router and firewall direction, public-IP and ISP constraints, dynamic DNS options, and outside-network testing rather than assuming that a local connection proved remote access would work. The result was a practical field-support approach that treats hardware configuration, network exposure, and client verification as one connected access problem.
 problem: "The client needed remote access to an existing DVR camera system so cameras could be viewed outside the local network without physically being on site."
 constraints: "The setup had to work with the existing DVR, router, ISP connection, client devices, and available network options, while keeping the configuration understandable enough for future maintenance."
 approach: "Configured the DVR/network access path, checked local and remote connectivity, prepared DDNS or public-access direction, mapped the required service port, and tested access from outside the client network."

@@ -1,7 +1,10 @@
 ---
+resume: true
 title: "Building a Minimal Unix Shell in C"
 slug: "building-a-minimal-unix-shell-in-c"
 summary: "Field notes from building a small Unix-like shell in C to understand process creation, command parsing, PATH lookup, environment handling, and low-level Linux behavior."
+resumeSummary: >-
+  Implemented a minimal Unix-style shell in C to study how command execution works beneath a terminal interface. The work follows the complete loop of reading input, tokenizing commands, handling built-ins, resolving executables through PATH and environment variables, then coordinating fork, exec, and wait behaviour. It also records parsing and error-handling edge cases, making the project a practical exploration of processes, memory boundaries, exit status, and the distinction between a shell command and the program it launches.
 category: "Systems Programming"
 tags:
   - c

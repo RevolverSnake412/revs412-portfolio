@@ -1,7 +1,10 @@
 ---
+client: ""
 title: "Odoo Product & Inventory Integration"
 slug: "odoo-product-inventory-integration"
 summary: "A business workflow direction for moving product data, stock, quotations, and invoicing away from static website content and into a structured Odoo-based system."
+resumeSummary: >-
+  Defined an Odoo-centered product and inventory workflow for a computer-hardware business whose public catalogue initially relied on static website data. The architecture moves products, availability, quotations, and invoicing into one structured business source while keeping the customer-facing site simple to browse and contact. The work addressed data ownership, product identity, stock synchronization direction, quotation-to-invoice continuity, and the risks of repeatedly maintaining the same information across disconnected tools, creating a clearer path from catalogue presentation to daily business operations.
 problem: "The business needed a cleaner way to manage product information, stock, quotations, and invoices instead of relying on static website data and manual updates."
 constraints: "The integration had to stay understandable for business use, avoid unnecessary complexity, and support gradual adoption instead of forcing a full ERP workflow all at once."
 approach: "Use Odoo as the structured business layer for products, inventory, sales, quotations, and invoicing, then plan how public product data can later connect to the website catalogue."
