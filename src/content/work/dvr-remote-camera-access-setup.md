@@ -21,6 +21,234 @@ tools:
 date: "2024-08-01"
 featured: true
 published: true
+translations:
+  fr:
+    title: "Mise en place d’un accès distant à un système de caméras DVR"
+    type: "Projet concret"
+    summary: "Intervention terrain permettant l’accès distant à un système de caméras DVR grâce à la configuration réseau, à une orientation DDNS et à des tests côté client."
+    problem: "Le client avait besoin de consulter un système de caméras DVR existant en dehors du réseau local, sans devoir se trouver physiquement sur site."
+    constraints: "La configuration devait fonctionner avec le DVR, le routeur, la connexion opérateur et les appareils existants, tout en restant suffisamment compréhensible pour la maintenance future."
+    approach: "Configuration du chemin d’accès DVR/réseau, vérification de la connectivité locale et distante, préparation de l’accès DDNS ou public, redirection du port de service requis et tests depuis un réseau externe."
+    outcome: "Le client a obtenu un accès distant fonctionnel et une meilleure compréhension du rôle du DVR, du routeur, de l’adresse publique et de la méthode de consultation."
+    resumeSummary: >-
+      L'accès à distance prévu et validé pour un système de caméra DVR en traçant le chemin complet entre
+      l'enregistreur, le réseau local, le routeur, la connexion publique et l'appareil de visualisation. Le
+      travail a couvert les ports d'adressage et de service DVR, la direction du routeur et du pare-feu, les
+      contraintes du public-IP et du FAI, les options dynamiques de DNS et les essais hors réseau plutôt qu'en
+      supposant qu'une connexion locale s'avère un accès à distance fonctionnerait. Le résultat a été une
+      approche pratique de soutien sur le terrain qui traite la configuration du matériel, l'exposition au
+      réseau et la vérification du client comme un problème d'accès connecté.
+    body: |-
+
+      ## Rôle
+
+      Ce travail est le mieux aligné avec le support informatique sur le terrain, le petit dépannage réseau, la configuration de l'appareil client et la configuration pratique d'accès à distance.
+
+      Il démontre la capacité de travailler avec un système physique existant, de comprendre comment le réseau local et le chemin d'accès public l'affectent, et de rendre la configuration utilisable pour un client plutôt que seulement techniquement correct.
+
+      La valeur de ce travail n'est pas de présenter l'accès à la caméra comme un système complexe. La valeur est de gérer les détails pratiques qui décident habituellement si l'accès à distance fonctionne: configuration du routeur, accessibilité publique, règles de port, paramètres DVR, direction DDNS, et test client.
+
+      ## Résumé du projet
+
+      Le client avait un système de caméras DVR et devait accéder aux caméras à distance.
+
+      Il s'agissait de vérifier comment le DVR était connecté, d'identifier le chemin d'accès requis, de configurer le routeur/réseau, de préparer le DDNS ou l'orientation d'accès public, et de vérifier si le système pouvait être atteint de l'extérieur du réseau local.
+
+      Ce type de travail se situe entre le réseau et le support de terrain. La tâche est petite par rapport à un projet d'infrastructure complet, mais il faut comprendre plusieurs couches à la fois : le DVR, le routeur, l'adresse IP locale, l'adresse IP publique, le comportement du FAI, le port de service, la méthode de visualisation et le périphérique client.
+
+      ## Ce que ce projet veut prouver
+
+      - l'accès à distance de la caméra dépend de l'ensemble du chemin réseau, pas seulement les paramètres DVR
+      - petits emplois informatiques de terrain nécessitent toujours un dépannage systématique
+      - la configuration routeur/pare-feu doit correspondre aux exigences de service DVR;
+      - DDNS est utile lorsque l'adresse IP publique peut changer
+      - test client est important parce qu'une configuration n'est pas terminée avant que l'utilisateur puisse effectivement y accéder
+      - documenter la méthode d'accès aide à la maintenance future
+      - un support informatique pratique signifie souvent que l'équipement existant fonctionne de manière fiable et ne remplace pas tout
+
+      ## Pioche et outils utilisés
+
+      Ce projet concernait la configuration du réseau et de l'appareil plutôt que le développement de logiciels.
+
+      ### Système de caméra
+
+      - Système de caméra DVR
+      - configuration du réseau local DVR
+      - accès à la caméra
+      - méthode de visualisation côté client
+
+      ### Accès au réseau
+
+      - configuration du routeur
+      - transport de port
+      - test d'accès public à la propriété intellectuelle
+      - Direction du DDNS
+      - adresse IP locale
+      - Dépannage LAN/WAN
+
+      ### Soutien à la clientèle
+
+      - test d'accès à distance
+      - configuration du périphérique client
+      - vérification de la connectivité
+      - explication de l'accès au système
+      - direction future de l'entretien
+
+      ## Construction prévue
+
+      La configuration prévue était un chemin d'accès à distance fonctionnel pour le système de caméra DVR.
+
+      Le client devrait pouvoir :
+
+      - voir les caméras de l'extérieur du réseau local
+      - utiliser une adresse stable ou une méthode d'accès
+      - se connecter à travers le chemin de port/service correct
+      - comprendre les détails d'accès de base
+      - garder le système accessible après des changements de réseau normaux lorsque possible
+
+      L'objectif n'était pas de reconstruire le système de surveillance, mais de rendre le système existant accessible et utilisable à distance.
+
+      ## Portée de la prestation
+
+      ### 1. Vérification du DVR et du réseau local
+
+      Vérifiez comment le DVR a été connecté au réseau local et confirmez qu'il a pu être atteint en interne.
+
+      Cette étape est importante car l'accès à distance ne peut pas être corrigé de l'extérieur si la configuration DVR locale est déjà erronée.
+
+      ### 2. Configuration du routeur et du port
+
+      Configurez le chemin d'accès côté routeur afin que le service DVR requis puisse être atteint de l'extérieur du réseau.
+
+      Cela impliquait de cartographier le chemin de port/service nécessaire vers le DVR et de s'assurer que la règle correspondait à l'adresse IP du périphérique.
+
+      ### 3. DDNS / Direction de l ' adresse publique
+
+      Préparer une méthode d'accès à distance que le client pourrait utiliser sans mémoriser ou vérifier l'adresse IP publique à chaque fois.
+
+      Le DDNS est utile lorsque l'IP public peut changer, mais il dépend toujours du routeur, du FAI et des options de configuration disponibles.
+
+      ### 4. Essai à distance
+
+      Tester l'accès depuis l'extérieur du réseau local.
+
+      Il s'agit d'une étape critique, car l'accès local ne prouve pas que l'accès à distance fonctionne.
+
+      ### 5. Configuration de l'accès au client
+
+      Aidez le client à comprendre comment accéder au système depuis son appareil ou sa méthode de visualisation.
+
+      La configuration n'est utile que si le client peut répéter le processus d'accès sans avoir besoin d'aide technique à chaque fois.
+
+      ## Décisions pratiques
+
+      ### Vérifier l'accès local avant l'accès à distance
+
+      La première étape consiste à confirmer que le DVR fonctionne à l'intérieur du réseau.
+
+      Si le DVR n'est pas accessible localement, modifier les règles côté WAN ne résoudra pas le problème réel.
+
+      ### Gardez la méthode d'accès simple
+
+      Le client a besoin d'un moyen pratique pour atteindre le système.
+
+      La solution devrait éviter toute complexité inutile à moins que la situation du réseau ou du FAI ne l'exige.
+
+      ### Faire correspondre les règles du port au DVR, pas deviner
+
+      Le transfert de port doit indiquer l'adresse et le port de service locaux corrects.
+
+      Mauvaises IP internes ou ports mal appariés sont des raisons communes l'accès DVR à distance échoue.
+
+      ### Considérer le comportement du public en matière de PI et de FAI
+
+      L'accès à distance dépend de l'accessibilité de la connexion client depuis l'extérieur.
+
+      Si le FAI utilise CGNAT ou bloque l'accès à l'entrée, le transfert de port normal peut ne pas suffire. Dans ce cas, des alternatives telles que VPN, les fonctionnalités relais/P2P ou les changements de FAI peuvent être nécessaires.
+
+      ### Essai à l'extérieur du réseau
+
+      Tester à partir du même Wi-Fi peut donner une fausse confiance.
+
+      La configuration doit être vérifiée à partir d'une connexion externe pour confirmer que l'accès à distance fonctionne réellement.
+
+      ## Ce qu'une version terminée devrait montrer
+
+      Une solide version terminée de ce travail devrait montrer:
+
+      - DVR accessible sur le réseau local
+      - chemin de renvoi ou d'accès correct du routeur
+      - DDNS stable ou direction d'accès publique
+      - accès à distance testé de l'extérieur du réseau local
+      - méthode de visualisation client confirmée
+      - détails d'accès de base documentés
+      - limitations connues expliquées
+      - notes de maintenance pour les futurs changements de routeur, de FSI ou de DVR
+
+      ## Preuves à retenir
+
+      Les preuves utiles de ce projet seraient les suivantes :
+
+      - Capture d'écran des paramètres réseau DVR
+      - retour du port routeur screenshot
+      - Capture d'écran de configuration DDNS si utilisé
+      - résultat du test d'accès public
+      - résultat du test d'accès local
+      - résultat de l'essai de réseau externe
+      - périphérique client / visionnement de la configuration de l'application screenshot
+      - notes sur l'adresse IP DVR et le port de service
+      - notes sur les limitations des FAI et de la PI publique
+      - instructions d'accès finales pour le client
+
+      ## Hypothèses techniques
+
+      La configuration suppose que le DVR est fonctionnel et connecté au réseau local.
+
+      Il suppose également que la connexion Internet peut supporter l'accès entrant, à moins qu'une autre méthode ne soit utilisée.
+
+      Le chemin d'accès public dépend de la configuration du routeur, du comportement du FAI, des paramètres du service DVR et de l'adresse publique accessible au réseau client.
+
+      ## Principaux risques
+
+      - DVR local IP change après la configuration
+      - port pointant vers le mauvais périphérique
+      - FAI utilisant CGNAT ou bloquant le trafic entrant
+      - DDNS ne met pas à jour correctement
+      - faible niveau de DVR
+      - exposer les services DVR directement sans envisager la sécurité
+      - client changeant les paramètres du routeur ou du FAI plus tard
+      - en supposant que l'accès local signifie des travaux d'accès à distance
+      - instructions d'accès peu claires causant des problèmes de soutien plus tard
+
+      ## État actuel
+
+      Ce travail représente une direction de configuration sur le terrain pour permettre l'accès à distance DVR.
+
+      La valeur principale est pratique : connecter un système de caméra existant à un chemin de visualisation à distance et valider que le client peut y accéder en dehors du site.
+
+      Ce type de travail est de petite portée mais important dans les environnements clients réels car le résultat final dépend de la configuration correcte sur plusieurs appareils et couches réseau.
+
+      ## Ce que ce projet ne prétend pas
+
+      Ce projet ne prétend pas être une refonte complète du système de sécurité.
+
+      Elle ne prétend pas remplacer la planification de la surveillance professionnelle.
+
+      Elle ne prétend pas que l'exposition directe des services DVR est toujours le meilleur choix de sécurité à long terme.
+
+      Le projet est mieux compris comme un travail pratique dans le domaine de l'informatique : rendre accessible à distance une caméra DVR existante, la tester et expliquer clairement le chemin d'accès.
+
+      ## Entrevue / Point de discussion avec le client
+
+      Une explication utile pour ce projet est:
+
+      > J'ai configuré l'accès à distance pour un système de caméra DVR existant en vérifiant la connexion DVR locale, en réglant le chemin d'accès du routeur, en préparant le DDNS ou la direction d'accès public, et en testant depuis l'extérieur du réseau.
+
+      ## Travaux connexes
+
+      - Configuration de l'infrastructure du réseau OpenWrt
+      - Configuration de l'accès à distance WireGuard
+      - Documentation technique destinée aux clients
 ---
 
 ## Role Fit

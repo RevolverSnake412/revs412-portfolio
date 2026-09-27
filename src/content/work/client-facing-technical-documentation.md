@@ -23,6 +23,253 @@ tools:
 date: "2026-06-10"
 featured: true
 published: true
+translations:
+  fr:
+    title: "Documentation technique destinée au client"
+    type: "Projet concret"
+    summary: "Documentation simplifiée, schémas et supports de planification d’équipements pour un projet d’infrastructure d’entreprise."
+    problem: "Le client devait comprendre un projet technique complexe mêlant logiciel, matériel, réseau, serveurs et processus opérationnels, sans être submergé par les détails d’implémentation."
+    constraints: "La documentation devait rester claire pour un décideur non technique, éviter les détails d’ingénierie inutiles et conserver une précision suffisante pour la planification, le budget, le choix du matériel et les échanges sur le projet."
+    approach: "Création de briefs simplifiés, d’explications d’architecture, de listes d’équipements, de schémas réseau et de PDF orientés client traduisant le système technique en supports compréhensibles."
+    outcome: "Le client a reçu des documents plus clairs sur ce qui devait être construit, le matériel requis, le fonctionnement général du système et les décisions restant à valider."
+    resumeSummary: >-
+      Produit du matériel de planification orienté vers le client pour une initiative d'infrastructure
+      commerciale couvrant les flux de travail des applications, les équipements de réseau, les routeurs, les
+      mini-PC, l'accès VPN, la direction du serveur et la planification des banques SIM. Le travail a traduit
+      les préoccupations importantes de mise en oeuvre en mémoires de projet, diagrammes d'architecture,
+      listes d'équipement et PDF prêts à prendre des décisions qu'un intervenant non technique pourrait
+      utiliser sans perdre les importantes limites techniques. Il a séparé la communication avec les clients
+      des détails de l'ingénierie interne, identifié les choix non résolus et les responsabilités matérielles,
+      et rendu visible la portée, les dépendances et les hypothèses opérationnelles avant la mise en oeuvre.
+    body: |-
+
+      ## Rôle
+
+      Ce travail correspond le mieux à la communication technique, à la planification de l'infrastructure, à l'explication de la conception du système et à la documentation destinée aux clients.
+
+      Il démontre la capacité de traduire un projet technique en documents qu'un client peut effectivement utiliser pour prendre des décisions. L'important est non seulement de connaître les pièces techniques, mais de savoir quoi montrer, ce qu'il faut simplifier, ce qu'il faut enlever et comment conserver l'explication utile sans la rendre trompeuse.
+
+      Le travail s'inscrit dans un rôle technique pratique où la communication compte autant que la mise en oeuvre : expliquer l'architecture, l'équipement, les responsabilités et la portée du projet à un client qui n'a pas besoin de tous les détails de bas niveau.
+
+      ## Résumé du projet
+
+      Le projet a nécessité une documentation axée sur le client pour un système d'infrastructure d'affaires comprenant des logiciels, du matériel, des réseaux, un accès au serveur, la planification des banques SIM, des routeurs, des mini-ordinateurs, un accès VPN et des workflows opérationnels.
+
+      Le client devait comprendre le projet suffisamment clairement pour discuter de la portée, approuver l'orientation et comprendre les documents requis. En même temps, la documentation ne pouvait pas être écrite comme des notes d'ingénierie interne.
+
+      Les travaux de documentation ont porté sur la conversion du système technique en mémoires, diagrammes, listes d'équipement simplifiés et documents PDF expliquant le projet au bon niveau.
+
+      ## Ce que ce projet veut prouver
+
+      - systèmes techniques ont besoin de différentes explications pour les clients et les implémentateurs
+      - les diagrammes peuvent réduire la confusion lorsqu'un projet implique du matériel, des logiciels et des réseaux
+      - la planification de l'équipement fait partie de la communication du projet, pas seulement l'achat
+      - un bon document technique devrait guider les décisions, et non submerger le lecteur
+      - supprimer les détails inutiles peut rendre un document plus utile
+      - les clients non techniques ont encore besoin de limites et d'hypothèses techniques précises
+      - Les projets d'infrastructure bénéficient d'une portée écrite avant le début de la mise en œuvre
+
+      ## Pioche et outils utilisés
+
+      Le travail était axé sur la documentation plutôt que sur les applications.
+
+      ### Domaines de documentation
+
+      - descriptifs de projet
+      - explications d'architecture
+      - Listes d ' équipements
+      - des documents d ' aperçu des infrastructures
+      - explication simplifiée de la pile
+      - notes de planification matérielle
+      - PDF orienté vers le client
+      - documentation bilingue ou linguistique au besoin
+
+      ### Zones de diagramme
+
+      - architecture de système de haut niveau
+      - relation réseau/serveur
+      - Flux marchand/admin
+      - direction de placement du matériel
+      - Concept d'accès VPN/serveur
+      - Direction du placement de la banque SIM et du routeur
+
+      ### Domaines de planification
+
+      - routeurs
+      - mini PC
+      - Matériel SIM-bank/SIM-pool
+      - direction du commutateur gérée
+      - Direction d'accès VPN
+      - direction de l'hébergement du serveur
+      - partage des responsabilités matérielles
+      - Éléments et rôles du système
+
+      ### Domaines de communication
+
+      - simplifier la formulation technique
+      - supprimer les détails de mise en œuvre qui n'ont pas aidé le client
+      - adapter les explications pour un décideur plus âgé ou non technique
+      - séparer les documents au niveau du client des notes de construction internes
+
+      ## Construction prévue
+
+      La construction prévue était un ensemble de documents qui pourraient appuyer les discussions sur les projets avant et pendant la mise en oeuvre.
+
+      Les documents devaient expliquer :
+
+      - ce que le projet est
+      - Ce que le système est censé faire
+      - quels composants physiques et logiciels sont nécessaires
+      - la relation entre les principaux composants
+      - quel matériel doit être préparé
+      - les décisions encore ouvertes
+      - Quelles parties devraient être traitées plus tard pendant la mise en œuvre
+      - ce qui ne doit pas être surexpliqué au client
+
+      Les documents ne visaient pas à remplacer les notes techniques de mise en oeuvre, mais à aider le client à comprendre le projet et à prendre des décisions.
+
+      ## Portée de la prestation
+
+      ### 1. Résumé du projet
+
+      Créer une description de projet simplifiée qui explique le but du système sans plonger dans des détails d'ingénierie inutiles.
+
+      Le mémoire devait décrire clairement le projet, montrer son objectif pratique et éviter un langage qui rendrait le système plus compliqué que nécessaire.
+
+      ### 2. Liste des équipements et matériaux
+
+      Préparer une liste des documents requis ou recommandés pour le projet.
+
+      Il s'agissait de matériel lié à l'infrastructure, comme les routeurs, les mini-ordinateurs, les commutateurs gérés, le matériel SIM-bank/SIM-pool, les antennes ou l'équipement SIM, et les accessoires connexes.
+
+      L'objectif n'était pas seulement d'énumérer les éléments, mais d'expliquer pourquoi ils appartiennent au système au niveau pratique.
+
+      ### 3. Diagrammes d'infrastructure et de réseau
+
+      Créer des diagrammes montrant comment les principales parties du système se connectent.
+
+      Les diagrammes visaient à faciliter la relation entre le logiciel, les serveurs, le routeur, le matériel de la banque SIM, l'accès administratif et les flux marchands/clients.
+
+      ### 4. Explication de la pile
+
+      Préparer une explication simple de la pile de projet.
+
+      Le libellé devait rester compréhensible : suffisamment pour montrer quelles sont les technologies ou les couches concernées, mais pas tellement que le client se perd dans les détails de mise en œuvre.
+
+      ### 5. Simplification du niveau client
+
+      Régler la documentation après avoir examiné ce qui était trop technique, inutile ou non utile pour le client.
+
+      Il s'agissait notamment de supprimer ou de simplifier les sections qui avaient un sens pour un exécuteur, mais qui n'avaient pas aidé le client à prendre des décisions.
+
+      ### 6. Préparation en format PDF
+
+      Préparer des documents de type PDF qui pourraient être partagés avec le client.
+
+      Les documents devaient se sentir organisés et lisibles plutôt que comme des notes brutes ou des plans techniques copiés.
+
+      ## Décisions pratiques
+
+      ### Documents clients distincts des notes d'ingénierie interne
+
+      Un document destiné aux clients ne devrait pas inclure tous les détails de mise en oeuvre.
+
+      Le client doit comprendre le projet, les matériaux requis, les responsabilités et le comportement général du système. Des détails internes tels que l'organisation de service exacte, la mise en page de serveur de bas niveau, ou l'implémentation future du grand livre peuvent être conservés pour la planification de l'implémentation.
+
+      ### Gardez les explications matérielles pratiques
+
+      Les recommandations matérielles doivent s'expliquer par le rôle : routeur, périphérique serveur, matériel SIM-bank, commutateur, périphérique d'accès VPN, etc.
+
+      L'objectif est d'aider le client à comprendre pourquoi un article est nécessaire, et non de créer une liste d'achats avec des spécifications techniques aléatoires.
+
+      ### Supprimer les détails qui ne soutiennent pas une décision
+
+      Certains détails techniques sont précis mais ne sont pas utiles dans un document client.
+
+      Si une section n'aide pas le client à approuver la portée, à comprendre le système ou à préparer le matériel, elle doit être raccourcie ou déplacée ailleurs.
+
+      ### Utiliser des diagrammes pour réduire les explications répétées
+
+      Pour un système impliquant applications, serveurs, routeurs, accès VPN et matériel SIM, les diagrammes sont plus efficaces que les longs paragraphes.
+
+      La documentation devrait utiliser des diagrammes pour montrer les relations, puis utiliser du texte pour expliquer le sens pratique.
+
+      ## Ce qu'une version terminée devrait montrer
+
+      Une solide version terminée de ce travail de documentation devrait montrer:
+
+      - un mémoire de projet clair
+      - une explication simplifiée du système
+      - une liste des équipements/matériaux
+      - un diagramme d'architecture de haut niveau
+      - un diagramme de relation réseau/serveur
+      - une simple explication de pile
+      - formulation conviviale pour le client
+      - supprimé les détails techniques inutiles
+      - une séparation entre la portée orientée vers le client et les notes de mise en œuvre internes
+      - documents pouvant appuyer la discussion, l'approbation et la planification
+
+      ## Preuves à retenir
+
+      Les preuves utiles de ce projet seraient les suivantes :
+
+      - screenshots ou exportations des documents PDF
+      - diagrammes d'architecture
+      - page de liste des équipements/matériaux
+      - avant/après des exemples de formulation simplifiée
+      - Version des diagrammes montrant les composants du système
+      - notes montrant ce qui a été enlevé parce qu'il était trop technique
+      - exemples de documents bilingues, le cas échéant
+      - Sections des recommandations matérielles
+      - Exportations définitives de documents prêts au client
+
+      ## Hypothèses techniques
+
+      La documentation destinée aux clients n'est pas la même que le plan de construction technique.
+
+      Les documents supposent que le client a besoin d'une compréhension suffisante pour approuver l'orientation et préparer les ressources, tandis que l'équipe de mise en oeuvre conserve des détails techniques plus détaillés séparément.
+
+      Le projet suppose également que la documentation claire peut prévenir la confusion plus tard, en particulier lorsque le projet mélange matériel physique, infrastructure de serveur, applications et opérations commerciales.
+
+      ## Principaux risques
+
+      - rendant les documents trop techniques pour le client
+      - Simplification excessive jusqu'à disparition de contraintes importantes
+      - Mélanger la portée du client avec les détails de mise en œuvre interne
+      - listing matériel sans expliquer son rôle
+      - à l'aide de diagrammes qui ont l'air sympas mais ne clarifient pas les décisions
+      - documenter les caractéristiques avant la stabilité de la portée
+      - faire croire au client que le système est plus simple ou plus complet qu'il ne l'est vraiment
+
+      ## État actuel
+
+      Ce travail de documentation appuie le projet d'infrastructure commerciale plus vaste.
+
+      La valeur actuelle est de transformer un projet complexe en matériau compréhensible pour le client : ce qui est construit, quels composants sont nécessaires et comment les principales parties sont liées.
+
+      La prochaine valeur réside dans la mise à jour de la documentation à mesure que les décisions de mise en œuvre deviennent plus concrètes.
+
+      ## Ce que ce projet ne prétend pas
+
+      Ce projet ne prétend pas être la mise en œuvre technique finale.
+
+      Elle ne prétend pas que les documents contiennent toutes les décisions techniques de faible niveau.
+
+      Elle ne prétend pas que les diagrammes remplacent la planification du déploiement réel.
+
+      Le projet est mieux compris comme une communication technique orientée vers le client : traduire un système complexe en documents clairs qui appuient la planification, la discussion et l'approbation.
+
+      ## Entrevue / Point de discussion avec le client
+
+      Une explication utile pour ce projet est:
+
+      > J'ai créé une documentation technique axée sur le client pour un projet d'infrastructure complexe. L'objectif n'était pas de montrer tous les détails techniques, mais d'expliquer clairement le système pour la planification et la prise de décision: ce que le projet fait, quel matériel est nécessaire, comment les composants principaux se connectent, et quelles pièces devraient rester comme des détails de mise en œuvre interne.
+
+      ## Travaux connexes
+
+      - Portefeuille de recharge / Architecture de la plateforme SIM-Bank
+      - Site Web des entreprises de GOPC
+      - Intégration des produits et des stocks d'Odoo
 ---
 
 ## Role Fit
