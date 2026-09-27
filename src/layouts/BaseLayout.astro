@@ -5,15 +5,21 @@ import Navbar from '../components/Navbar.astro';
 import Footer from '../components/Footer.astro';
 import Terminal from '../components/Terminal.astro';
 import CommandContext from '../components/CommandContext.astro';
+import { alternateLocale, defaultLocale, localizedPath, withBase, type Locale } from '../i18n';
 
-interface Props { title?: string; description?: string; showCommandContext?: boolean; }
+interface Props { title?: string; description?: string; showCommandContext?: boolean; locale?: Locale; alternatePath?: string; }
 const settings = await getEntry('settings', 'site');
 if (!settings) throw new Error('Missing settings/site.yaml');
-const { title = settings.data.title, description = settings.data.description, showCommandContext = true } = Astro.props;
+const { title = settings.data.title, description = settings.data.description, showCommandContext = true, locale = defaultLocale, alternatePath } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
+const base = import.meta.env.BASE_URL;
+const pagePath = Astro.url.pathname
+  .replace(/^\/fr(?=\/|$)/, '/')
+  .replace(/^\/+|\/+$/g, '');
+const languageHref = withBase(base, localizedPath(alternateLocale(locale), alternatePath ?? pagePath));
 ---
 <!doctype html>
-<html lang="en">
+<html lang={locale}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -21,6 +27,8 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
     <meta name="description" content={description} />
     <meta name="robots" content="index, follow" />
     <link rel="canonical" href={canonical} />
+    {languageHref && <link rel="alternate" hreflang={alternateLocale(locale)} href={new URL(languageHref, Astro.site ?? Astro.url.origin)} />}
+    {languageHref && <link rel="alternate" hreflang="x-default" href={new URL(withBase(base, localizedPath(defaultLocale, alternatePath)), Astro.site ?? Astro.url.origin)} />}
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={settings.data.name} />
     <meta property="og:title" content={title} />
@@ -29,10 +37,10 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
     <title>{title}</title>
   </head>
   <body>
-    <Navbar name={settings.data.shortName} />
+    <Navbar name={settings.data.shortName} locale={locale} languageHref={languageHref} />
     {showCommandContext && <CommandContext homeCommand={settings.data.introCommand} />}
     <slot />
     <Footer email={settings.data.contact.email} />
-    <Terminal settings={settings.data} />
+    <Terminal settings={settings.data} locale={locale} />
   </body>
 </html>

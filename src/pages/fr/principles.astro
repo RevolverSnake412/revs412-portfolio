@@ -1,0 +1,15 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+const principles = [
+  'Partir du problème réel, pas de l’outil.',
+  'Rendre les modes de défaillance visibles avant le déploiement.',
+  'Préférer des systèmes simples jusqu’à ce que la complexité soit justifiée.',
+  'Déboguer à partir des faits, pas des suppositions.',
+  'Écrire des notes qui expliquent les décisions, pas seulement les étapes.',
+  'Garder les systèmes suffisamment compréhensibles pour pouvoir les maintenir plus tard.',
+];
+---
+<BaseLayout locale="fr" alternatePath="principles" title="Principes · revs412" description="Principes de travail pour des systèmes techniques concrets.">
+  <main class="shell page"><header class="page-header"><p class="eyebrow">notes de travail</p><h1>Principes</h1><p>Ces principes maintiennent les décisions ancrées dans le système réel et dans sa maintenance future.</p></header>
+  <div class="principle-list">{principles.map((statement, index) => <div class="principle"><span class="principle-number">{String(index + 1).padStart(2, '0')}</span><p>{statement}</p></div>)}</div></main>
+</BaseLayout>

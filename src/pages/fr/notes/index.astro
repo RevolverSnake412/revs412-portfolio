@@ -1,0 +1,16 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { uiCopy } from '../../../i18n';
+
+const copy = uiCopy('fr');
+const base = import.meta.env.BASE_URL;
+const notes = (await getCollection('notes', ({ data }) => data.published && Boolean(data.translations?.fr)))
+  .map((entry) => ({ entry, translation: entry.data.translations!.fr! }))
+  .sort((a, b) => b.entry.data.date.valueOf() - a.entry.data.date.valueOf());
+---
+<BaseLayout locale="fr" alternatePath="notes">
+  <main class="shell page"><header class="page-header"><p class="eyebrow">index chronologique</p><h1>{copy.translatedNotes}</h1><p>Notes techniques disponibles en français.</p></header>
+    <section class="notes-index-section"><div class="notes-index">{notes.map(({ entry, translation }) => <article class="note-index-entry"><div><h3>{translation.title}</h3><p class="note-index-meta">{translation.category} · {entry.data.date.toLocaleDateString('fr-FR', { year: 'numeric', month: 'short', day: 'numeric' })}</p><p class="note-index-summary">{translation.summary}</p></div><a class="note-index-open" href={`${base}fr/notes/${entry.data.slug}/`}>Ouvrir : lire la note →</a></article>)}</div>{notes.length === 0 && <p class="empty-state">{copy.translationPending}</p>}</section>
+  </main>
+</BaseLayout>

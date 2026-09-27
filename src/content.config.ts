@@ -2,6 +2,28 @@ import { defineCollection } from 'astro:content';
 import { file, glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 
+const frenchNoteTranslation = z.object({
+  title: z.string(),
+  summary: z.string(),
+  resumeSummary: z.string().optional(),
+  category: z.string(),
+  seoTitle: z.string().optional(),
+  seoDescription: z.string().optional(),
+  body: z.string(),
+});
+
+const frenchWorkTranslation = z.object({
+  title: z.string(),
+  type: z.string(),
+  summary: z.string(),
+  problem: z.string(),
+  constraints: z.string(),
+  approach: z.string(),
+  outcome: z.string(),
+  resumeSummary: z.string().optional(),
+  body: z.string(),
+});
+
 const work = defineCollection({
   loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/work' }),
   schema: z.object({
@@ -21,6 +43,8 @@ const work = defineCollection({
     featured: z.boolean().default(false),
     published: z.boolean().default(false),
     client: z.string().optional(),
+    translationKey: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Use a clean translation key.').optional(),
+    translations: z.object({ fr: frenchWorkTranslation.optional() }).optional(),
     date: z.coerce.date(),
   }),
 });
@@ -43,6 +67,8 @@ const notes = defineCollection({
     client: z.string().optional(),
     seoTitle: z.string().optional(),
     seoDescription: z.string().optional(),
+    translationKey: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Use a clean translation key.').optional(),
+    translations: z.object({ fr: frenchNoteTranslation.optional() }).optional(),
   }),
 });
 
@@ -81,9 +107,16 @@ const settings = defineCollection({
   }),
 });
 
+const resumeFrenchTranslation = z.object({
+  name: z.string(),
+  headline: z.string(),
+  summary: z.string(),
+  capabilities: z.array(z.string()).min(1),
+});
+
 const resume = defineCollection({
   loader: file('./src/content/settings/resume.yaml'),
-  schema: z.object({ brand: z.string(), name: z.string().optional(), headline: z.string(), summary: z.string(), portfolioUrl: z.url(), linkedinUrl: z.url(), githubUrl: z.url(), capabilities: z.array(z.string()).min(1), education: z.array(z.object({ institution: z.string(), program: z.string(), dates: z.string(), detail: z.string().optional() })).min(1) }),
+  schema: z.object({ brand: z.string(), name: z.string().optional(), headline: z.string(), summary: z.string(), portfolioUrl: z.url(), linkedinUrl: z.url(), githubUrl: z.url(), capabilities: z.array(z.string()).min(1), education: z.array(z.object({ institution: z.string(), program: z.string(), dates: z.string(), detail: z.string().optional() })).min(1), translations: z.object({ fr: resumeFrenchTranslation.optional() }).optional() }),
 });
 
 export const collections = { work, notes, principles, settings, resume };

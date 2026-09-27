@@ -1,0 +1,28 @@
+---
+import { getCollection } from 'astro:content';
+import { marked } from 'marked';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+
+export async function getStaticPaths() {
+  const work = await getCollection('work', ({ data }) => data.published && Boolean(data.translations?.fr));
+  return work.map((entry) => ({ params: { slug: entry.data.slug }, props: { entry, translation: entry.data.translations!.fr! } }));
+}
+const { entry, translation } = Astro.props;
+const body = await marked.parse(translation.body);
+const projectDate = entry.data.date.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+---
+<BaseLayout locale="fr" alternatePath={`work/${entry.data.slug}`} title={`${translation.title} · revs412`} description={translation.summary}>
+  <main class="shell page"><article class="detail">
+    <header class="page-header"><p class="eyebrow">projet / {projectDate}</p><h1>{translation.title}</h1><p>{translation.summary}</p></header>
+    {entry.data.cover && <img src={entry.data.cover} alt="" />}
+    <div class="process" aria-label="Structure de l'étude de cas">
+      <div><h2>Problème</h2><p>{translation.problem}</p></div>
+      <div><h2>Contraintes</h2><p>{translation.constraints}</p></div>
+      <div><h2>Approche</h2><p>{translation.approach}</p></div>
+      <div><h2>Résultat</h2><p>{translation.outcome}</p></div>
+    </div>
+    <section class="work-secondary" aria-labelledby="secondary-details-title"><h2 id="secondary-details-title">Détails complémentaires</h2><div class="prose" set:html={body} /></section>
+    {entry.data.tools?.length ? <ul class="tag-list" aria-label="Outils utilisés">{entry.data.tools.map((tool: string) => <li class="tag">{tool}</li>)}</ul> : null}
+    {(entry.data.externalLink || entry.data.repoLink) && <nav class="detail-links" aria-label="Liens du projet">{entry.data.externalLink && <a href={entry.data.externalLink} rel="noreferrer">lien externe ↗</a>}{entry.data.repoLink && <a href={entry.data.repoLink} rel="noreferrer">dépôt ↗</a>}</nav>}
+  </article></main>
+</BaseLayout>

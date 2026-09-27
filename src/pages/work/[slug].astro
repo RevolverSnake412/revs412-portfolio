@@ -10,7 +10,7 @@ const { entry } = Astro.props;
 const { Content } = await render(entry);
 const projectDate = entry.data.date.toLocaleDateString('en', { year: 'numeric', month: 'long', day: 'numeric' });
 ---
-<BaseLayout title={`${entry.data.title} · revs412`} description={entry.data.summary}>
+<BaseLayout title={`${entry.data.title} · revs412`} description={entry.data.summary} alternatePath={entry.data.translations?.fr ? `work/${entry.data.slug}` : undefined}>
   <main class="shell page"><article class="detail">
     <header class="page-header"><p class="eyebrow">project / {projectDate}</p><h1>{entry.data.title}</h1><p>{entry.data.summary}</p></header>
     {entry.data.cover && <img src={entry.data.cover} alt="" />}

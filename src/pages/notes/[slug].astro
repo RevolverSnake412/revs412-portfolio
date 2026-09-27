@@ -11,7 +11,7 @@ const { Content } = await render(entry);
 const date = entry.data.date.toLocaleDateString('en', { year: 'numeric', month: 'long', day: 'numeric' });
 const updated = entry.data.updated?.toLocaleDateString('en', { year: 'numeric', month: 'long', day: 'numeric' });
 ---
-<BaseLayout title={entry.data.seoTitle ?? `${entry.data.title} · revs412`} description={entry.data.seoDescription ?? entry.data.summary}>
+<BaseLayout title={entry.data.seoTitle ?? `${entry.data.title} · revs412`} description={entry.data.seoDescription ?? entry.data.summary} alternatePath={entry.data.translations?.fr ? `notes/${entry.data.slug}` : undefined}>
   <main class="shell page"><article class="detail">
     <header class="page-header"><p class="eyebrow">notes / {entry.data.category}</p><h1>{entry.data.title}</h1><div class="detail-meta"><span>{date}</span>{updated && <span>updated {updated}</span>}</div><p>{entry.data.summary}</p></header>
     {entry.data.cover && <img src={entry.data.cover} alt="" />}

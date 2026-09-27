@@ -1,33 +1,44 @@
 ---
 import { getCollection } from 'astro:content';
 import { parrotFrames } from '../data/parrotFrames';
+import { frenchPrinciples, terminalCopy, type Locale } from '../i18n';
 
 const { settings } = Astro.props;
+const locale: Locale = Astro.props.locale === 'fr' ? 'fr' : 'en';
 const base = import.meta.env.BASE_URL;
+const copy = terminalCopy[locale];
+const contentBase = locale === 'fr' ? `${base}fr/` : base;
 const [work, notes, principles] = await Promise.all([
   getCollection('work', ({ data }) => data.published),
   getCollection('notes', ({ data }) => data.published),
   getCollection('principles', ({ data }) => data.published),
 ]);
 const terminalData = {
-  base,
-  intro: settings.description,
-  contact: settings.contact,
-  work: work.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()).map(({ data }) => ({ slug: data.slug, title: data.title, summary: data.summary, problem: data.problem, constraints: data.constraints, approach: data.approach, outcome: data.outcome })),
-  notes: notes.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()).map(({ data }) => ({ slug: data.slug, title: data.title, summary: data.summary, category: data.category, date: data.date.toISOString().slice(0, 10) })),
-  principles: principles.sort((a, b) => a.data.order - b.data.order).map(({ data }) => data.statement),
+  base: contentBase,
+  copy,
+  intro: locale === 'fr' ? 'Je travaille sur des outils métier, des systèmes logiciels, des infrastructures, l’automatisation, le déploiement et le dépannage. Mon objectif est de choisir le bon niveau de complexité et de rendre les systèmes compréhensibles, utilisables et fiables.' : settings.description,
+  contact: { ...settings.contact, availability: locale === 'fr' ? 'Disponible pour des missions techniques réfléchies.' : settings.contact.availability, location: locale === 'fr' ? 'À distance / Maroc' : settings.contact.location },
+  work: work.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()).flatMap(({ data }) => {
+    const item = locale === 'fr' ? data.translations?.fr : data;
+    return item ? [{ slug: data.slug, title: item.title, summary: item.summary, problem: 'problem' in item ? item.problem : '', constraints: 'constraints' in item ? item.constraints : '', approach: 'approach' in item ? item.approach : '', outcome: 'outcome' in item ? item.outcome : '' }] : [];
+  }),
+  notes: notes.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()).flatMap(({ data }) => {
+    const item = locale === 'fr' ? data.translations?.fr : data;
+    return item ? [{ slug: data.slug, title: item.title, summary: item.summary, category: item.category, date: data.date.toISOString().slice(0, 10) }] : [];
+  }),
+  principles: locale === 'fr' ? frenchPrinciples : principles.sort((a, b) => a.data.order - b.data.order).map(({ data }) => data.statement),
 };
 ---
-<section class="terminal-overlay" id="terminal-mode" role="dialog" aria-modal="true" aria-label="Terminal mode" hidden>
+<section class="terminal-overlay" id="terminal-mode" role="dialog" aria-modal="true" aria-label={copy.dialog} hidden>
   <div class="terminal">
-    <div class="terminal-bar"><span>revs412@portfolio:~</span><span class="terminal-dots terminal-mode-dots"><button class="terminal-dot-minimize" type="button" data-terminal-minimize aria-label="Minimize terminal mode"></button><button class="terminal-dot-maximize" type="button" data-terminal-maximize aria-label="Maximize terminal mode"></button><button class="terminal-dot-close" type="button" data-terminal-close aria-label="Close and reset terminal mode"></button></span></div>
+    <div class="terminal-bar"><span>revs412@portfolio:~</span><span class="terminal-dots terminal-mode-dots"><button class="terminal-dot-minimize" type="button" data-terminal-minimize aria-label={copy.minimize}></button><button class="terminal-dot-maximize" type="button" data-terminal-maximize aria-label={copy.maximize}></button><button class="terminal-dot-close" type="button" data-terminal-close aria-label={copy.close}></button></span></div>
     <div class="terminal-output" data-terminal-output aria-live="polite"></div>
     <pre class="terminal-parrot" data-terminal-parrot hidden aria-label="A dancing parrot"></pre>
     <canvas class="terminal-cmatrix" data-terminal-cmatrix hidden aria-label="CMatrix animation"></canvas>
     <form class="terminal-input-row" data-terminal-form>
       <label class="terminal-prompt" for="terminal-command"><span class="command-identity">revs412@portfolio</span><span class="command-colon">:</span><span class="command-path">~</span><span class="command-dollar">$</span></label>
       <span class="terminal-input-shell">
-        <input class="terminal-input" id="terminal-command" data-terminal-input autocomplete="off" spellcheck="false" aria-label="Terminal command" />
+        <input class="terminal-input" id="terminal-command" data-terminal-input autocomplete="off" spellcheck="false" aria-label={copy.input} />
         <span class="terminal-input-visual" aria-hidden="true"><span data-terminal-before></span><span class="cursor terminal-input-cursor">█</span><span data-terminal-after></span></span>
       </span>
     </form>
@@ -125,15 +136,15 @@ const terminalData = {
   const bootPrompt = (command) => prompt(command).replace('</div>', '<span class="cursor terminal-input-cursor" aria-hidden="true">█</span></div>');
   const print = (value) => { if (output) { output.insertAdjacentHTML('beforeend', value); output.scrollTop = output.scrollHeight; } };
   const help = () => [
-    line('<span class="cyan">commands</span>'),
-    line('help — show available commands'), line('intro — read the introduction'),
-    line('work / work &lt;slug&gt; — list or open case studies'),
-    line('notes / notes &lt;slug&gt; — list or open notes'),
-    line('principles — list working principles'), line('contact — contact details'), line('parrot — start the local parrot'), line('cmatrix [options] — run the CMatrix terminal simulation'),
-    line('clear — clear this screen'),
+    line(`<span class="cyan">${terminalData.copy.commands}</span>`),
+    line(`help — ${terminalData.copy.help}`), line(`intro — ${terminalData.copy.intro}`),
+    line(`work / work &lt;slug&gt; — ${terminalData.copy.workList}`),
+    line(`notes / notes &lt;slug&gt; — ${terminalData.copy.notesList}`),
+    line(`principles — ${terminalData.copy.principles}`), line(`contact — ${terminalData.copy.contact}`), line(`parrot — ${terminalData.copy.parrot}`), line(`cmatrix [options] — ${terminalData.copy.cmatrix}`),
+    line(`clear — ${terminalData.copy.clear}`),
   ].join('');
-  const listWork = () => terminalData.work.length ? terminalData.work.map((item) => line(`${terminalLink(`${terminalData.base}work/${item.slug}`, item.slug)} — ${escapeHtml(item.title)}`)).join('') : line('No published work items yet.');
-  const listNotes = () => terminalData.notes.length ? terminalData.notes.map((item) => line(`${terminalLink(`${terminalData.base}notes/${item.slug}`, item.slug)} — ${escapeHtml(item.title)}`)).join('') : line('No published notes yet.');
+  const listWork = () => terminalData.work.length ? terminalData.work.map((item) => line(`${terminalLink(`${terminalData.base}work/${item.slug}`, item.slug)} — ${escapeHtml(item.title)}`)).join('') : line(terminalData.copy.noWork);
+  const listNotes = () => terminalData.notes.length ? terminalData.notes.map((item) => line(`${terminalLink(`${terminalData.base}notes/${item.slug}`, item.slug)} — ${escapeHtml(item.title)}`)).join('') : line(terminalData.copy.noNotes);
   const shellWords = (value) => Array.from(value.matchAll(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g), (match) => match[0].replace(/^(?:"|')|(?:"|')$/g, ''));
   const run = (raw) => {
     const command = raw.trim();
@@ -148,12 +159,12 @@ const terminalData = {
     else if (name === 'notes' && !slug) print(listNotes());
     else if (name === 'principles') print(terminalData.principles.map((item, i) => line(`${i + 1}. ${escapeHtml(item)}`)).join(''));
     else if (name === 'contact') print(line(terminalLink(`mailto:${terminalData.contact.email}`, terminalData.contact.email)) + (terminalData.contact.discord ? line(`discord: ${escapeHtml(terminalData.contact.discord)}`) : '') + (terminalData.contact.telegram ? line(`telegram: ${terminalLink(`https://t.me/${terminalData.contact.telegram.replace(/^@/, '')}`, terminalData.contact.telegram)}`) : '') + line(escapeHtml(terminalData.contact.availability)) + (terminalData.contact.location ? line(escapeHtml(terminalData.contact.location)) : ''));
-    else if (name === 'work') { const item = terminalData.work.find((entry) => entry.slug === slug); print(item ? line(`<span class="cyan">${escapeHtml(item.title)}</span>`) + line(`problem: ${escapeHtml(item.problem)}`) + line(`constraints: ${escapeHtml(item.constraints)}`) + line(`approach: ${escapeHtml(item.approach)}`) + line(`outcome: ${escapeHtml(item.outcome)}`) + line(terminalLink(`${terminalData.base}work/${item.slug}`, 'open full case study →')) : line(`No work item found for "${escapeHtml(slug)}".`)); }
-    else if (name === 'notes') { const item = terminalData.notes.find((entry) => entry.slug === slug); print(item ? line(`<span class="cyan">${escapeHtml(item.title)}</span>`) + line(escapeHtml(item.summary)) + line(terminalLink(`${terminalData.base}notes/${item.slug}`, 'open note →')) : line(`No note found for "${escapeHtml(slug)}".`)); }
+    else if (name === 'work') { const item = terminalData.work.find((entry) => entry.slug === slug); print(item ? line(`<span class="cyan">${escapeHtml(item.title)}</span>`) + line(`${terminalData.copy.problem}: ${escapeHtml(item.problem)}`) + line(`${terminalData.copy.constraints}: ${escapeHtml(item.constraints)}`) + line(`${terminalData.copy.approach}: ${escapeHtml(item.approach)}`) + line(`${terminalData.copy.outcome}: ${escapeHtml(item.outcome)}`) + line(terminalLink(`${terminalData.base}work/${item.slug}`, terminalData.copy.openWork)) : line(`${terminalData.copy.noWorkFound} "${escapeHtml(slug)}".`)); }
+    else if (name === 'notes') { const item = terminalData.notes.find((entry) => entry.slug === slug); print(item ? line(`<span class="cyan">${escapeHtml(item.title)}</span>`) + line(escapeHtml(item.summary)) + line(terminalLink(`${terminalData.base}notes/${item.slug}`, terminalData.copy.openNote)) : line(`${terminalData.copy.noNoteFound} "${escapeHtml(slug)}".`)); }
     else if (name === 'parrot') startParrot();
     else if (name === 'cmatrix') startCMatrix(args);
     else if (name === 'clear') { if (output) output.innerHTML = ''; }
-    else print(line(`Command not found: ${escapeHtml(command)}. Type <span class="cyan">help</span>.`));
+    else print(line(`${terminalData.copy.notFound} ${escapeHtml(command)}. ${terminalData.copy.typeHelp} <span class="cyan">help</span>.`));
   };
   const principlesOutput = () => terminalData.principles.map((item, index) => line(`${index + 1}. ${escapeHtml(item)}`)).join('');
   const bootTerminal = () => {

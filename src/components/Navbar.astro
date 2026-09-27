@@ -1,19 +1,27 @@
 ---
+import { defaultLocale, hasLocalizedSection, localizedPath, uiCopy, withBase, type Locale } from '../i18n';
+
 const { name } = Astro.props;
 const brandMark = name.slice(0, 1);
 const path = Astro.url.pathname;
 const base = import.meta.env.BASE_URL;
+const locale: Locale = Astro.props.locale ?? defaultLocale;
+const languageHref: string | undefined = Astro.props.languageHref;
+const copy = uiCopy(locale);
+const normalizedPath = `${path.replace(/\/+$/, '') || '/'}/`;
+const sectionHref = (section: string) => withBase(base, localizedPath(hasLocalizedSection(locale, section) ? locale : defaultLocale, section));
 const links = [
-  { href: `${base}work`, path: `${base}work`, label: 'Work' }, { href: `${base}notes`, path: `${base}notes`, label: 'Notes' },
-  { href: `${base}principles`, path: `${base}principles`, label: 'Principles' }, { href: `${base}resume`, path: `${base}resume`, label: 'Resume' }, { href: `${base}contact`, path: `${base}contact`, label: 'Contact' },
+  { href: sectionHref('work'), path: sectionHref('work'), label: copy.work }, { href: sectionHref('notes'), path: sectionHref('notes'), label: copy.notes },
+  { href: sectionHref('principles'), path: sectionHref('principles'), label: copy.principles }, { href: sectionHref('resume'), path: sectionHref('resume'), label: copy.resume }, { href: sectionHref('contact'), path: sectionHref('contact'), label: copy.contact },
 ];
 ---
 <header class="site-header">
   <nav class="nav shell" aria-label="Main navigation">
-    <a class="brand" href={base} aria-label={name}>{brandMark}</a>
-    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-links">Menu</button>
+    <a class="brand" href={sectionHref('')} aria-label={name}>{brandMark}</a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-links">{copy.menu}</button>
     <div class="nav-links" id="site-links">
-      {links.map((link) => <a href={link.href} aria-current={path === link.path || path.startsWith(`${link.path}/`) ? 'page' : undefined}>{link.label}</a>)}
+      {links.map((link) => <a href={link.href} aria-current={normalizedPath === link.path || normalizedPath.startsWith(link.path) ? 'page' : undefined}>{link.label}</a>)}
+      <span class="language-switcher" aria-label="Language">{locale === 'en' ? <><span class="is-active">EN</span><span aria-hidden="true">/</span><a href={languageHref} lang="fr">FR</a></> : <><a href={languageHref} lang="en">EN</a><span aria-hidden="true">/</span><span class="is-active">FR</span></>}</span>
     </div>
   </nav>
 </header>
