@@ -2,9 +2,9 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 const base = import.meta.env.BASE_URL;
 ---
-<BaseLayout title="Resume · revs412" description="Download or view the current resume for Oussama Ait Agnaou." showCommandContext={false}>
+<BaseLayout title="Resume · revs412" description="Download or view the current resume for Oussama Ait Agnaou." showCommandContext={false} alternatePath="resume">
   <main class="resume-viewer-page shell">
-    <div class="resume-viewer-actions"><a href={`${base}Oussama-Ait-Agnaou-Resume.pdf`} download>Download PDF ↓</a></div>
+    <div class="resume-viewer-actions"><nav class="resume-language-switcher" aria-label="Resume language"><span aria-current="page">English</span><a href={`${base}fr/resume/`}>Français</a></nav><a href={`${base}Oussama-Ait-Agnaou-Resume.pdf`} download>Download PDF ↓</a></div>
     <iframe class="resume-pdf-viewer" src={`${base}Oussama-Ait-Agnaou-Resume.pdf#view=FitH`} title="Oussama Ait Agnaou — resume"></iframe>
     <p class="resume-viewer-fallback">If your browser cannot display PDFs inline, <a href={`${base}Oussama-Ait-Agnaou-Resume.pdf`} download>download the resume PDF</a>.</p>
   </main>

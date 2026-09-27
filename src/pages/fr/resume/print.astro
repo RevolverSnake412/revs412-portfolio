@@ -1,0 +1,36 @@
+---
+import { getCollection, getEntry } from 'astro:content';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+
+const [settings, profile, allWork, allNotes] = await Promise.all([
+  getEntry('settings', 'site'), getEntry('resume', 'resume'),
+  getCollection('work', ({ data }) => data.published && Boolean(data.translations?.fr)),
+  getCollection('notes', ({ data }) => data.published && data.resume === true && Boolean(data.translations?.fr)),
+]);
+if (!settings || !profile || !profile.data.translations?.fr) throw new Error('Missing French resume translation.');
+const frenchProfile = profile.data.translations.fr;
+const work = allWork.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const notes = allNotes.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const displayDate = (date: Date) => new Intl.DateTimeFormat('fr-FR', { month: 'short', year: 'numeric', timeZone: 'UTC' }).format(date);
+const portfolioLink = (path: string) => new URL(`fr/${path.replace(/^\/+/, '')}`, `${profile.data.portfolioUrl.replace(/\/$/, '')}/`).href;
+---
+<BaseLayout locale="fr" alternatePath="resume" title="CV · revs412" description={frenchProfile.summary} showCommandContext={false}>
+  <main class="resume-page">
+    <div class="resume-actions shell"><a href={`${import.meta.env.BASE_URL}Oussama-Ait-Agnaou-CV-Francais.pdf`} download>Télécharger le CV PDF ↓</a></div>
+    <article class="resume-document" lang="fr">
+      <header class="resume-header">
+        <p class="resume-brand">{profile.data.brand}</p>
+        <h1>{frenchProfile.name}</h1>
+        <p class="resume-headline">{frenchProfile.headline}</p>
+        <p class="resume-contact"><a href={`mailto:${settings.data.contact.email}`}>{settings.data.contact.email}</a><span aria-hidden="true"> · </span><a href={profile.data.portfolioUrl}>revs412.me</a><span aria-hidden="true"> · </span><a href={profile.data.linkedinUrl}>LinkedIn</a><span aria-hidden="true"> · </span><a href={profile.data.githubUrl}>GitHub</a></p>
+        <p class="resume-location">À distance / Maroc</p>
+      </header>
+      <section class="resume-section" aria-labelledby="profile-heading"><h2 id="profile-heading">Profil</h2><p>{frenchProfile.summary}</p></section>
+      <section class="resume-section" aria-labelledby="capabilities-heading"><h2 id="capabilities-heading">Compétences clés</h2><ul class="resume-capabilities">{frenchProfile.capabilities.map((capability) => <li>{capability}</li>)}</ul></section>
+      <section class="resume-section" aria-labelledby="experience-heading"><h2 id="experience-heading">Expérience professionnelle</h2><div class="resume-entries resume-experience"><article class="resume-entry"><div class="resume-entry-heading"><div><h3>Ingénieur logiciel indépendant &amp; spécialiste réseau</h3><p class="resume-entry-meta">Indépendant · À distance / Maroc</p></div><p class="resume-experience-period">2025 – Aujourd’hui</p></div><ul class="resume-experience-details"><li>Réalisation de missions en logiciel, infrastructure, automatisation, déploiement et dépannage pour des clients indépendants.</li><li>Conception et maintenance de services backend, de flux métier, d’accès réseau et de systèmes auto-hébergés.</li><li>Traduction des besoins techniques en réalisations maintenables et en documentation opérationnelle claire.</li><li>Accompagnement des projets depuis l’analyse jusqu’au déploiement, à la vérification et à la transmission.</li></ul></article><article class="resume-entry"><div class="resume-entry-heading"><div><h3>Support informatique</h3><p class="resume-entry-meta">HDI COM</p></div><p class="resume-experience-period">2024</p></div><ul class="resume-experience-details"><li>Support de premier niveau pour postes de travail, logiciels, connectivité et accès utilisateurs.</li><li>Diagnostic des incidents Windows, réseau et périphériques, avec escalade documentée des problèmes non résolus.</li><li>Assistance à la configuration et au dépannage technique courant des utilisateurs.</li></ul></article></div></section>
+      <section class="resume-section" aria-labelledby="education-heading"><h2 id="education-heading">Formation</h2><div class="resume-entries resume-education">{profile.data.education.map((entry) => <article class="resume-entry"><div class="resume-entry-heading"><div><h3>{entry.institution}</h3><p class="resume-entry-meta">{entry.program}</p>{entry.detail && <p class="resume-education-detail">{entry.detail}</p>}</div><p class="resume-experience-period">{entry.dates}</p></div></article>)}</div></section>
+      <section class="resume-section" aria-labelledby="work-heading"><div class="resume-section-start"><h2 id="work-heading">Projets sélectionnés</h2><div class="resume-entries">{work.slice(0, 1).map((item) => { const translated = item.data.translations!.fr!; return <article class="resume-entry"><div class="resume-entry-heading"><div><h3><a href={portfolioLink(`work/${item.data.slug}/`)}>{translated.title}</a></h3><p class="resume-entry-meta">{translated.type}{item.data.client && <> · {item.data.client}</>}</p></div><time datetime={item.data.date.toISOString()}>{displayDate(item.data.date)}</time></div><p>{translated.resumeSummary ?? translated.summary}</p></article>; })}</div></div>{work.length > 1 && <div class="resume-entries resume-entries-continuation">{work.slice(1).map((item) => { const translated = item.data.translations!.fr!; return <article class="resume-entry"><div class="resume-entry-heading"><div><h3><a href={portfolioLink(`work/${item.data.slug}/`)}>{translated.title}</a></h3><p class="resume-entry-meta">{translated.type}{item.data.client && <> · {item.data.client}</>}</p></div><time datetime={item.data.date.toISOString()}>{displayDate(item.data.date)}</time></div><p>{translated.resumeSummary ?? translated.summary}</p></article>; })}</div>}</section>
+      {notes.length > 0 && <section class="resume-section" aria-labelledby="notes-heading"><div class="resume-section-start"><h2 id="notes-heading">Notes techniques sélectionnées</h2><div class="resume-entries">{notes.slice(0, 1).map((item) => { const translated = item.data.translations!.fr!; return <article class="resume-entry"><div class="resume-entry-heading"><div><h3><a href={portfolioLink(`notes/${item.data.slug}/`)}>{translated.title}</a></h3><p class="resume-entry-meta">{translated.category}{item.data.client && <> · {item.data.client}</>}</p></div><time datetime={item.data.date.toISOString()}>{displayDate(item.data.date)}</time></div><p>{translated.resumeSummary ?? translated.summary}</p></article>; })}</div></div>{notes.length > 1 && <div class="resume-entries resume-entries-continuation">{notes.slice(1).map((item) => { const translated = item.data.translations!.fr!; return <article class="resume-entry"><div class="resume-entry-heading"><div><h3><a href={portfolioLink(`notes/${item.data.slug}/`)}>{translated.title}</a></h3><p class="resume-entry-meta">{translated.category}{item.data.client && <> · {item.data.client}</>}</p></div><time datetime={item.data.date.toISOString()}>{displayDate(item.data.date)}</time></div><p>{translated.resumeSummary ?? translated.summary}</p></article>; })}</div>}</section>}
+    </article>
+  </main>
+</BaseLayout>

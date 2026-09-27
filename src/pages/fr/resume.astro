@@ -1,0 +1,17 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const base = import.meta.env.BASE_URL;
+---
+<BaseLayout locale="fr" alternatePath="resume" title="CV · revs412" description="Consulter ou télécharger le CV français d’Oussama AIT AGNAOU." showCommandContext={false}>
+  <main class="resume-viewer-page shell">
+    <div class="resume-viewer-actions">
+      <nav class="resume-language-switcher" aria-label="Langue du CV">
+        <a href={`${base}resume/`}>English</a><span aria-current="page">Français</span>
+      </nav>
+      <a href={`${base}Oussama-Ait-Agnaou-CV-Francais.pdf`} download>Télécharger le CV PDF ↓</a>
+    </div>
+    <iframe class="resume-pdf-viewer" src={`${base}Oussama-Ait-Agnaou-CV-Francais.pdf#view=FitH`} title="Oussama AIT AGNAOU — CV"></iframe>
+    <p class="resume-viewer-fallback">Si votre navigateur ne peut pas afficher les PDF, <a href={`${base}Oussama-Ait-Agnaou-CV-Francais.pdf`} download>téléchargez le CV PDF</a>.</p>
+  </main>
+</BaseLayout>

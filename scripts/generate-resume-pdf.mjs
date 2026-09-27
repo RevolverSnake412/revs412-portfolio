@@ -7,7 +7,7 @@ const dist = resolve('dist');
 const base = process.env.BASE_PATH || '/';
 const basePath = base === '/' ? '/' : `/${base.replace(/^\/+|\/+$/g, '')}/`;
 const mimeTypes = { '.css': 'text/css', '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.woff2': 'font/woff2' };
-if (!existsSync(join(dist, 'resume', 'index.html'))) throw new Error('Resume page is missing from dist. Run the Astro build first.');
+if (!existsSync(join(dist, 'resume', 'index.html')) || !existsSync(join(dist, 'fr', 'resume', 'index.html'))) throw new Error('Resume pages are missing from dist. Run the Astro build first.');
 const fileForRequest = async (pathname) => {
   const decoded = decodeURIComponent(pathname);
   const relativePath = decoded.startsWith(basePath) ? decoded.slice(basePath.length) : decoded.replace(/^\/+/, '');
@@ -34,9 +34,13 @@ try {
   browser = await chromium.launch();
   const page = await browser.newPage();
   await page.emulateMedia({ media: 'print' });
-  await page.goto(`http://127.0.0.1:${address.port}${basePath}resume/print/`, { waitUntil: 'networkidle' });
-  if (await page.locator('.resume-entry').count() === 0) throw new Error('Resume page did not render any work entries.');
   const pdfOptions = { format: 'A4', printBackground: true, preferCSSPageSize: true, margin: { top: '0', right: '0', bottom: '0', left: '0' } };
-  await page.pdf({ path: join(dist, 'Oussama-Ait-Agnaou-Resume.pdf'), ...pdfOptions });
-  await page.pdf({ path: resolve('public', 'Oussama-Ait-Agnaou-Resume.pdf'), ...pdfOptions });
+  const generate = async (path, fileName) => {
+    await page.goto(`http://127.0.0.1:${address.port}${basePath}${path}`, { waitUntil: 'networkidle' });
+    if (await page.locator('.resume-entry').count() === 0) throw new Error(`Resume page did not render entries: ${path}`);
+    await page.pdf({ path: join(dist, fileName), ...pdfOptions });
+    await page.pdf({ path: resolve('public', fileName), ...pdfOptions });
+  };
+  await generate('resume/print/', 'Oussama-Ait-Agnaou-Resume.pdf');
+  await generate('fr/resume/print/', 'Oussama-Ait-Agnaou-CV-Francais.pdf');
 } finally { await browser?.close(); await new Promise((resolveServer) => server.close(resolveServer)); }

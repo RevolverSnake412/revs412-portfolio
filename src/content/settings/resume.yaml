@@ -20,3 +20,14 @@ resume:
       program: Software Engineering Programme — Backend Development
       dates: 2023 – 2024
       detail: Software Engineer Certificate · September 2024
+  translations:
+    fr:
+      name: Oussama AIT AGNAOU
+      headline: Ingénieur logiciel indépendant & spécialiste réseau
+      summary: >-
+        Ingénieur logiciel et spécialiste réseau indépendant, je conçois, réalise et maintiens des systèmes techniques fiables. Mon travail couvre les outils métier, les systèmes logiciels, les infrastructures réseau, l’automatisation, le déploiement, le dépannage et la documentation technique. J’aborde chaque projet en clarifiant les besoins réels, en choisissant des solutions maintenables et en rendant le résultat compréhensible pour les opérateurs comme pour les futurs développeurs.
+      capabilities:
+        - Systèmes métier et logiciels
+        - Infrastructure réseau et accès distant sécurisé
+        - Automatisation, déploiement et opérations
+        - Dépannage et documentation technique
