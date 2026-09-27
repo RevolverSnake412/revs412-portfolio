@@ -1,0 +1,541 @@
+---
+import { getCollection, getEntry } from 'astro:content';
+import TerminalPreview from '../components/TerminalPreview.astro';
+import WorkCard from '../components/WorkCard.astro';
+import NoteCard from '../components/NoteCard.astro';
+import EmptyState from '../components/EmptyState.astro';
+import { frenchPrinciples, type Locale } from '../i18n';
+
+const { locale = 'en' } = Astro.props as { locale?: Locale };
+const settings = await getEntry('settings', 'site');
+if (!settings) throw new Error('Missing settings/site.yaml');
+const frenchSite = {
+  ...settings.data,
+  heroLead: 'Des systèmes techniques concrets,',
+  heroSentences: ['conçus avec un raisonnement clair.', 'faits pour durer.', 'planifiés avant d’être construits.', 'ancrés dans des besoins réels.', 'améliorés par un débogage rigoureux.', 'documentés pour les évolutions futures.', 'testés dans des conditions concrètes.', 'organisés autour de décisions claires.', 'rendus fiables par l’attention aux détails.', 'pensés pour l’usage quotidien.'],
+  heroSubtitleLines: ['Je travaille sur des outils métier, des systèmes logiciels, des infrastructures, l’automatisation, le déploiement et le dépannage.', 'Mon objectif est de choisir le bon niveau de complexité et de rendre les systèmes compréhensibles, utilisables et fiables.'],
+  description: 'Je travaille sur des outils métier, des systèmes logiciels, des infrastructures, l’automatisation, le déploiement et le dépannage. Mon objectif est de choisir le bon niveau de complexité et de rendre les systèmes compréhensibles, utilisables et fiables.',
+};
+const site = locale === 'fr' ? frenchSite : settings.data;
+const [allWork, allNotes, principles] = await Promise.all([
+  getCollection('work', ({ data }) => data.published),
+  getCollection('notes', ({ data }) => data.published),
+  getCollection('principles', ({ data }) => data.published),
+]);
+const work = allWork.filter(({ data }) => data.featured).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()).slice(0, 3);
+const notes = allNotes.filter(({ data }) => data.featured).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()).slice(0, 3);
+const sortedPrinciples = principles.sort((a, b) => a.data.order - b.data.order);
+const base = import.meta.env.BASE_URL;
+const contentBase = locale === 'fr' ? `${base}fr/` : base;
+const cursorBase = `${base}icons/cursors/`;
+const portfolioEntries = ['work/', 'notes/', 'principles/', 'contact/', 'intro.md'];
+const translateWork = (data: (typeof allWork)[number]['data']) => locale === 'fr' ? data.translations?.fr : data;
+const translateNote = (data: (typeof allNotes)[number]['data']) => locale === 'fr' ? data.translations?.fr : data;
+const previewTerminalData = {
+  base: contentBase,
+  intro: site.description,
+  contact: { ...site.contact, availability: locale === 'fr' ? 'Disponible pour des missions techniques réfléchies.' : site.contact.availability, location: locale === 'fr' ? 'À distance / Maroc' : site.contact.location },
+  work: allWork.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()).flatMap(({ data }) => { const item = translateWork(data); return item ? [{ slug: data.slug, title: item.title, summary: item.summary, problem: 'problem' in item ? item.problem : '', constraints: 'constraints' in item ? item.constraints : '', approach: 'approach' in item ? item.approach : '', outcome: 'outcome' in item ? item.outcome : '' }] : []; }),
+  notes: allNotes.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()).flatMap(({ data }) => { const item = translateNote(data); return item ? [{ slug: data.slug, title: item.title, summary: item.summary }] : []; }),
+  principles: locale === 'fr' ? frenchPrinciples : sortedPrinciples.map(({ data }) => data.statement),
+};
+const copy = locale === 'fr' ? {
+  selectedWork: 'Projets sélectionnés', allWork: 'tous les projets →', noWork: 'Les études de cas apparaîtront ici lorsqu’elles seront prêtes à être partagées.', latestNotes: 'Dernières notes', allNotes: 'toutes les notes →', noNotes: 'Les notes sur les systèmes, les décisions et la récupération sont en préparation.', principles: 'Principes de travail', howIWork: 'Ma façon de travailler', principlesText: `${sortedPrinciples.length} principes concrets guident mes choix de périmètre, le débogage, la documentation et la maintenabilité des systèmes.`, readPrinciples: 'Lire tous les principes →', resume: 'CV', resumeText: 'Un aperçu concis des réalisations publiées et des notes techniques sélectionnées.', downloadResume: 'Télécharger le CV PDF ↓', workLabel: 'projet', readWork: 'lire l’étude de cas →', readNote: 'lire la note →', minimize: 'Réduire la fenêtre intro.md', maximize: 'Passer en mode fenêtre flottante', close: 'Fermer la fenêtre intro.md', hideKonsole: 'Masquer Konsole', editorLabel: 'Éditeur de présentation', taskbarLabel: 'Barre des tâches KDE Plasma'
+} : {
+  selectedWork: 'Selected work', allWork: 'all work →', noWork: 'Case studies will appear here when they are ready to share.', latestNotes: 'Latest notes', allNotes: 'all notes →', noNotes: 'Notes on systems, decisions, and recovery work are being prepared.', principles: 'Working principles', howIWork: 'How I work', principlesText: `${sortedPrinciples.length} practical principles guide how I choose scope, debug problems, document decisions, and keep systems maintainable.`, readPrinciples: 'Read all principles →', resume: 'Resume', resumeText: 'A concise record of published work and selected technical notes.', downloadResume: 'Download resume PDF ↓', workLabel: 'project', readWork: 'read case study →', readNote: 'read note →', minimize: `Minimize ${site.heroDocument} window`, maximize: 'Enter floating window mode', close: `Close ${site.heroDocument} window`, hideKonsole: 'Hide Konsole window', editorLabel: 'Introduction editor', taskbarLabel: 'KDE Plasma taskbar'
+};
+const displayDate = (date: Date) => new Intl.DateTimeFormat(locale === 'fr' ? 'fr-FR' : 'en', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(date);
+---
+<main class="shell page">
+    <section class="hero" aria-labelledby="intro-title">
+      <article class="vim-hero" aria-label={copy.editorLabel} style={`--dmz-cursor-default: url('${cursorBase}left_ptr.cur'); --dmz-cursor-link: url('${cursorBase}hand2.cur'); --dmz-cursor-text: url('${cursorBase}xterm.cur'); --dmz-cursor-grabbing: url('${cursorBase}grabbing.cur'); --dmz-cursor-horizontal-resize: url('${cursorBase}sb_h_double_arrow.cur'); --dmz-cursor-vertical-resize: url('${cursorBase}sb_v_double_arrow.cur'); --dmz-cursor-diagonal-back: url('${cursorBase}bd_double_arrow.cur'); --dmz-cursor-diagonal-forward: url('${cursorBase}fd_double_arrow.cur'); --dmz-cursor-loading: url('${cursorBase}watch.cur');`}>
+        <div class="vim-desktop" data-vim-desktop>
+          <div class="vim-desktop-intro" aria-label="Portfolio introduction">
+            <h1 id="intro-title" aria-label={`${site.heroLead} ${site.heroSentences[0]}`}><span class="hero-lead">{site.heroLead}</span>{' '}<span data-hero-title data-text={site.heroSentences[0]} data-hero-sentences={JSON.stringify(site.heroSentences)}>{site.heroSentences[0]}</span><span class="cursor hero-title-cursor" aria-hidden="true">█</span></h1>
+            <div class="vim-desktop-copy">
+              {site.heroSubtitleLines.map((line) => <p class="hero-copy">{line}</p>)}
+            </div>
+          </div>
+          <div class="vim-window-body">
+          <header class="vim-window-title">
+            <span data-vim-title-editor>{site.heroDocument} ~/ - VIM</span>
+            <span data-vim-title-console hidden>revs412@portfolio:~</span>
+            <span class="vim-window-controls">
+              <button class="vim-minimize-control" type="button" data-vim-minimize aria-label={copy.minimize}></button>
+              <button class="vim-maximize-control" type="button" data-vim-maximize aria-pressed="false" aria-label={copy.maximize}></button>
+              <button class="vim-close-control" type="button" data-vim-close aria-label={copy.close}></button>
+            </span>
+          </header>
+          <div class="vim-hero-content">
+            <div class="vim-editor-content" data-vim-editor-content>
+              <div class="vim-line vim-title-line">
+                <p class="vim-document-heading" aria-label={`${site.heroLead} ${site.heroSentences[0]}`}><span class="vim-heading-marker" aria-hidden="true">#</span>{' '}<span class="hero-lead">{site.heroLead}</span>{' '}<span data-hero-title data-text={site.heroSentences[0]} data-hero-sentences={JSON.stringify(site.heroSentences)}>{site.heroSentences[0]}</span><span class="cursor hero-title-cursor" aria-hidden="true">█</span></p>
+              </div>
+              <div class="vim-line vim-blank-line" aria-hidden="true"><span></span></div>
+              {site.heroSubtitleLines.map((line) => <div class="vim-line vim-copy-line"><p class="hero-copy"><span class="vim-quote-marker" aria-hidden="true">&gt;</span>{' '}{line}</p></div>)}
+              <div data-vim-filler-lines aria-hidden="true"></div>
+            </div>
+            <div class="vim-boot-console" data-vim-boot-console data-portfolio-entries={JSON.stringify(portfolioEntries)} hidden aria-live="polite">
+              <div data-vim-boot-history></div>
+              <p class="vim-boot-command"><span class="command-identity">revs412@portfolio</span><span class="command-colon">:</span><span class="command-path">~</span><span class="command-dollar">$</span>{' '}<span data-vim-boot-input></span><span class="cursor" aria-hidden="true">█</span></p>
+            </div>
+          </div>
+          <footer class="vim-statusline" aria-hidden="true">
+            <span>-- INSERT --</span>
+            <span data-vim-position data-base-column={2 + site.heroLead.length + 2}>1,{2 + site.heroLead.length + 2}</span>
+            <span>All</span>
+          </footer>
+            <span class="vim-resize-handle vim-resize-top" data-vim-resize="top" aria-hidden="true"></span>
+            <span class="vim-resize-handle vim-resize-right" data-vim-resize="right" aria-hidden="true"></span>
+            <span class="vim-resize-handle vim-resize-bottom" data-vim-resize="bottom" aria-hidden="true"></span>
+            <span class="vim-resize-handle vim-resize-left" data-vim-resize="left" aria-hidden="true"></span>
+            <span class="vim-resize-handle vim-resize-top-left" data-vim-resize="top-left" aria-hidden="true"></span>
+            <span class="vim-resize-handle vim-resize-top-right" data-vim-resize="top-right" aria-hidden="true"></span>
+            <span class="vim-resize-handle vim-resize-bottom-right" data-vim-resize="bottom-right" aria-hidden="true"></span>
+            <span class="vim-resize-handle vim-resize-bottom-left" data-vim-resize="bottom-left" aria-hidden="true"></span>
+          </div>
+        </div>
+        <footer class="kde-taskbar" aria-label={copy.taskbarLabel}>
+          <span class="kde-launcher" aria-hidden="true"><img class="kde-launcher-icon" src={`${base}icons/start-here-kde.svg`} alt="" /></span>
+          <button class="kde-task" type="button" data-vim-task data-kde-task-state="open" title="Konsole" aria-pressed="true" aria-label={copy.hideKonsole}><img class="kde-terminal-icon" src={`${base}icons/konsole.svg`} alt="" /><span class="kde-task-label">Konsole</span></button>
+          <span class="kde-tray"><span aria-hidden="true">⌁</span><span aria-hidden="true">◌</span><time data-kde-clock datetime=""></time></span>
+        </footer>
+      </article>
+      <TerminalPreview terminalData={previewTerminalData} />
+    </section>
+
+    <section class="section" aria-labelledby="work-heading">
+      <div class="section-head"><h2 id="work-heading">{copy.selectedWork}</h2><a href={`${contentBase}work`}>{copy.allWork}</a></div>
+      {work.length ? <div class="card-grid">{work.map((item) => locale === 'fr' ? (() => { const translated = item.data.translations!.fr!; return <a class="card" href={`${contentBase}work/${item.data.slug}`}><p class="card-label">{copy.workLabel} · {displayDate(item.data.date)}</p><h3>{translated.title}</h3><p>{translated.summary}</p><span class="card-footer">{copy.readWork}</span></a>; })() : <WorkCard item={item} />)}</div> : <EmptyState>{copy.noWork}</EmptyState>}
+    </section>
+    <section class="section" aria-labelledby="notes-heading">
+      <div class="section-head"><h2 id="notes-heading">{copy.latestNotes}</h2><a href={`${contentBase}notes`}>{copy.allNotes}</a></div>
+      {notes.length ? <div class="card-grid">{notes.map((item) => locale === 'fr' ? (() => { const translated = item.data.translations!.fr!; return <a class="card" href={`${contentBase}notes/${item.data.slug}`}><p class="card-label">{translated.category} · {displayDate(item.data.date)}</p><h3>{translated.title}</h3><p>{translated.summary}</p><span class="card-footer">{copy.readNote}</span></a>; })() : <NoteCard item={item} />)}</div> : <EmptyState>{copy.noNotes}</EmptyState>}
+    </section>
+    <section class="section" aria-labelledby="principles-heading">
+      <div class="section-head"><h2 id="principles-heading">{copy.principles}</h2></div>
+      <div class="home-principles-callout">
+        <h3>{copy.howIWork}</h3>
+        <p>{copy.principlesText}</p>
+        <a href={`${contentBase}principles`}>{copy.readPrinciples}</a>
+      </div>
+    </section>
+    <section class="section home-resume" aria-labelledby="resume-heading">
+      <div class="section-head"><h2 id="resume-heading">{copy.resume}</h2></div>
+      <p>{copy.resumeText}</p>
+      <a href={`${contentBase}resume/`}>{locale === 'fr' ? 'Voir le CV →' : 'View resume →'}</a>
+    </section>
+</main>
+<script>
+  const titles = Array.from(document.querySelectorAll<HTMLElement>('[data-hero-title]'));
+  const vimPosition = document.querySelector<HTMLElement>('[data-vim-position]');
+  const vimWindow = document.querySelector<HTMLElement>('.vim-hero');
+  const vimDesktop = document.querySelector<HTMLElement>('[data-vim-desktop]');
+  const vimWindowBody = document.querySelector<HTMLElement>('.vim-window-body');
+  const vimTerminalContent = document.querySelector<HTMLElement>('.vim-hero-content');
+  const vimFillerLines = document.querySelector<HTMLElement>('[data-vim-filler-lines]');
+  const vimEditorContent = document.querySelector<HTMLElement>('[data-vim-editor-content]');
+  const vimBootConsole = document.querySelector<HTMLElement>('[data-vim-boot-console]');
+  const vimBootHistory = document.querySelector<HTMLElement>('[data-vim-boot-history]');
+  const vimBootInput = document.querySelector<HTMLElement>('[data-vim-boot-input]');
+  const vimTitleEditor = document.querySelector<HTMLElement>('[data-vim-title-editor]');
+  const vimTitleConsole = document.querySelector<HTMLElement>('[data-vim-title-console]');
+  const vimMinimize = document.querySelector<HTMLButtonElement>('[data-vim-minimize]');
+  const vimMaximize = document.querySelector<HTMLButtonElement>('[data-vim-maximize]');
+  const vimClose = document.querySelector<HTMLButtonElement>('[data-vim-close]');
+  const vimTitlebar = document.querySelector<HTMLElement>('.vim-window-title');
+  const vimStatusline = document.querySelector<HTMLElement>('.vim-statusline');
+  const vimTask = document.querySelector<HTMLButtonElement>('[data-vim-task]');
+  const kdeClock = document.querySelector<HTMLTimeElement>('[data-kde-clock]');
+  const isCompactViewport = () => window.matchMedia('(max-width: 760px)').matches;
+  const updateKdeClock = () => {
+    if (!kdeClock) return;
+    const now = new Date();
+    kdeClock.textContent = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(now);
+    kdeClock.dateTime = now.toISOString();
+  };
+  updateKdeClock();
+  window.setInterval(updateKdeClock, 60_000);
+  const alignVimDesktopToGrid = () => {
+    if (!vimDesktop || !vimTerminalContent || !vimFillerLines) return;
+    const lines = vimFillerLines.querySelectorAll<HTMLElement>('.vim-empty-line');
+    const lastLine = lines.item(lines.length - 1);
+    if (!lastLine) return;
+    const content = vimTerminalContent.getBoundingClientRect();
+    const line = lastLine.getBoundingClientRect();
+    const remaining = content.bottom - line.bottom;
+    if (remaining <= .5 || line.height - remaining <= .5) return;
+    const desktop = vimDesktop.getBoundingClientRect();
+    const alignedHeight = desktop.height + line.height - remaining;
+    vimDesktop.style.flexBasis = `${alignedHeight}px`;
+    vimDesktop.style.minHeight = `${alignedHeight}px`;
+  };
+  const syncVimFillerLines = () => {
+    if (!vimTerminalContent || !vimFillerLines) return;
+    const styles = window.getComputedStyle(vimTerminalContent);
+    const renderLines = (count: number) => {
+      const lines = document.createDocumentFragment();
+      for (let index = 0; index < count; index += 1) {
+        const line = document.createElement('div');
+        const marker = document.createElement('span');
+        line.className = 'vim-line vim-empty-line';
+        marker.textContent = '~';
+        line.append(marker);
+        lines.append(line);
+      }
+      vimFillerLines.replaceChildren(lines);
+    };
+    renderLines(64);
+    const visibleBottom = vimTerminalContent.getBoundingClientRect().bottom - Number.parseFloat(styles.paddingBottom);
+    const count = Array.from(vimFillerLines.children).filter((line) => line.getBoundingClientRect().bottom <= visibleBottom + .5).length;
+    renderLines(count);
+    vimFillerLines.dataset.count = String(count);
+    window.requestAnimationFrame(alignVimDesktopToGrid);
+  };
+  window.requestAnimationFrame(syncVimFillerLines);
+  if (vimTerminalContent) new ResizeObserver(syncVimFillerLines).observe(vimTerminalContent);
+  type KonsoleTaskState = 'open' | 'minimized' | 'closed' | 'loading';
+  let vimBootTimers: number[] = [];
+  const clearVimBootTimers = () => {
+    vimBootTimers.forEach((timer) => window.clearTimeout(timer));
+    vimBootTimers = [];
+  };
+  const showVimEditor = () => {
+    clearVimBootTimers();
+    vimWindow?.classList.remove('is-booting');
+    if (vimBootConsole) vimBootConsole.hidden = true;
+    if (vimEditorContent) vimEditorContent.hidden = false;
+    if (vimTitleEditor) vimTitleEditor.hidden = false;
+    if (vimTitleConsole) vimTitleConsole.hidden = true;
+  };
+  const addVimBootLine = (content: string, className = '') => {
+    if (!vimBootHistory) return;
+    const line = document.createElement('p');
+    line.className = `vim-boot-line ${className}`.trim();
+    line.textContent = content;
+    vimBootHistory.append(line);
+  };
+  const addVimBootPrompt = (command: string) => {
+    if (!vimBootHistory) return;
+    const line = document.createElement('p');
+    line.className = 'vim-boot-line vim-boot-prompt';
+    line.append(
+      Object.assign(document.createElement('span'), { className: 'command-identity', textContent: 'revs412@portfolio' }),
+      Object.assign(document.createElement('span'), { className: 'command-colon', textContent: ':' }),
+      Object.assign(document.createElement('span'), { className: 'command-path', textContent: '~' }),
+      Object.assign(document.createElement('span'), { className: 'command-dollar', textContent: '$' }),
+      ` ${command}`,
+    );
+    vimBootHistory.append(line);
+  };
+  const typeVimBootCommand = (command: string, done: () => void) => {
+    if (!vimBootInput) return;
+    let index = 0;
+    const typeNext = () => {
+      vimBootInput.textContent = command.slice(0, index);
+      if (index < command.length) {
+        index += 1;
+        vimBootTimers.push(window.setTimeout(typeNext, 72));
+      } else {
+        vimBootTimers.push(window.setTimeout(done, 240));
+      }
+    };
+    typeNext();
+  };
+  const startVimBootSequence = () => {
+    if (!vimWindow || !vimBootConsole || !vimBootHistory || !vimBootInput) return;
+    clearVimBootTimers();
+    vimWindow.classList.add('is-booting');
+    vimBootConsole.hidden = false;
+    if (vimEditorContent) vimEditorContent.hidden = true;
+    if (vimTitleEditor) vimTitleEditor.hidden = true;
+    if (vimTitleConsole) vimTitleConsole.hidden = false;
+    vimBootHistory.replaceChildren();
+    vimBootInput.textContent = '';
+    typeVimBootCommand('ls', () => {
+      addVimBootPrompt('ls');
+      const entries = JSON.parse(vimBootConsole.dataset.portfolioEntries ?? '[]') as string[];
+      addVimBootLine(entries.join('  '), 'vim-boot-listing');
+      vimBootInput.textContent = '';
+      vimBootTimers.push(window.setTimeout(() => typeVimBootCommand('vim intro.md', () => {
+        vimBootTimers.push(window.setTimeout(() => {
+          showVimEditor();
+          syncVimFillerLines();
+        }, 420));
+      }), 320));
+    });
+  };
+  const setKonsoleTaskState = (state: KonsoleTaskState) => {
+    if (!vimTask) return;
+    vimTask.dataset.kdeTaskState = state;
+    vimTask.setAttribute('aria-pressed', String(state === 'open'));
+    vimTask.setAttribute('aria-busy', String(state === 'loading'));
+    vimTask.setAttribute('aria-label', state === 'open' ? 'Hide Konsole window' : state === 'closed' ? 'Open Konsole window' : 'Show Konsole window');
+  };
+  const setVimWindowVisible = (visible: boolean, state: KonsoleTaskState = visible ? 'open' : 'minimized') => {
+    vimWindow?.classList.toggle('is-closed', !visible);
+    if (!visible) showVimEditor();
+    setKonsoleTaskState(state);
+    if (visible) window.requestAnimationFrame(syncVimFillerLines);
+  };
+  let konsoleLaunchTimer: number | undefined;
+  const launchClosedKonsole = () => {
+    if (konsoleLaunchTimer) return;
+    setKonsoleTaskState('loading');
+    document.documentElement.classList.add('is-launching-konsole');
+    konsoleLaunchTimer = window.setTimeout(() => {
+      konsoleLaunchTimer = undefined;
+      document.documentElement.classList.remove('is-launching-konsole');
+      setVimWindowVisible(true);
+      startVimBootSequence();
+    }, 900);
+  };
+  vimMinimize?.addEventListener('click', () => setVimWindowVisible(false, 'minimized'));
+  vimClose?.addEventListener('click', () => setVimWindowVisible(false, 'closed'));
+  vimTask?.addEventListener('click', () => {
+    const state = vimTask.dataset.kdeTaskState as KonsoleTaskState | undefined;
+    if (state === 'closed') launchClosedKonsole();
+    else if (state === 'loading') return;
+    else setVimWindowVisible(vimWindow?.classList.contains('is-closed') ?? false);
+  });
+
+  type WindowGeometry = { left: number; top: number; width: number; height: number };
+  let lastFloatingWindow: WindowGeometry | undefined;
+  const minimumWidth = 360;
+  const minimumHeight = 280;
+  const clamp = (value: number, minimum: number, maximum: number) => Math.min(Math.max(value, minimum), maximum);
+  const windowSizeLimits = (desktop: DOMRect) => {
+    const frame = isCompactViewport() ? 12 : 24;
+    return {
+      minWidth: Math.min(isCompactViewport() ? 220 : minimumWidth, desktop.width - frame),
+      maxWidth: desktop.width - frame,
+      minHeight: Math.min(isCompactViewport() ? 150 : minimumHeight, desktop.height - frame),
+      maxHeight: desktop.height - frame,
+    };
+  };
+  const terminalGrid = () => {
+    if (!vimTerminalContent) return { column: 9, row: 23, widthFrame: 26, heightFrame: 77 };
+    const styles = window.getComputedStyle(vimTerminalContent);
+    const probe = document.createElement('span');
+    probe.textContent = '0000000000';
+    probe.style.cssText = `position:absolute;visibility:hidden;white-space:pre;font:${styles.font};`;
+    vimTerminalContent.append(probe);
+    const column = probe.getBoundingClientRect().width / 10;
+    probe.remove();
+    const paddingX = Number.parseFloat(styles.paddingLeft) + Number.parseFloat(styles.paddingRight);
+    const paddingY = Number.parseFloat(styles.paddingTop) + Number.parseFloat(styles.paddingBottom);
+    const titleHeight = vimTitlebar?.getBoundingClientRect().height ?? 28;
+    const statusHeight = vimStatusline?.getBoundingClientRect().height ?? 27;
+    return {
+      column: Math.max(1, column),
+      row: Math.max(1, Number.parseFloat(styles.lineHeight) || 23),
+      widthFrame: paddingX + 2,
+      heightFrame: titleHeight + statusHeight + paddingY + 2,
+    };
+  };
+  const snapToTerminalGrid = (value: number, minimum: number, maximum: number, unit: number, frame: number) => {
+    const minimumCells = Math.ceil((minimum - frame) / unit);
+    const maximumCells = Math.floor((maximum - frame) / unit);
+    if (maximumCells < minimumCells) return clamp(value, minimum, maximum);
+    const cells = clamp(Math.round((value - frame) / unit), minimumCells, maximumCells);
+    return frame + cells * unit;
+  };
+  const isFloating = () => vimWindow?.classList.contains('is-floating') ?? false;
+  const isMaximized = () => vimWindow?.classList.contains('is-maximized') ?? false;
+  const setMaximizeControl = (maximized: boolean) => {
+    vimMaximize?.setAttribute('aria-pressed', String(maximized));
+    vimMaximize?.setAttribute('aria-label', maximized ? 'Restore Konsole window size' : 'Maximize Konsole window');
+  };
+  const applyFloatingWindow = (geometry: WindowGeometry) => {
+    if (!vimWindow || !vimWindowBody || !vimDesktop) return;
+    const desktop = vimDesktop.getBoundingClientRect();
+    const grid = terminalGrid();
+    const limits = windowSizeLimits(desktop);
+    const width = snapToTerminalGrid(geometry.width, limits.minWidth, limits.maxWidth, grid.column, grid.widthFrame);
+    const height = snapToTerminalGrid(geometry.height, limits.minHeight, limits.maxHeight, grid.row, grid.heightFrame);
+    const left = clamp(geometry.left, 0, Math.max(0, desktop.width - width));
+    const top = clamp(geometry.top, 0, Math.max(0, desktop.height - height));
+    lastFloatingWindow = { left, top, width, height };
+    vimWindow.classList.remove('is-maximized');
+    vimWindow.classList.add('is-floating');
+    vimWindowBody.style.left = `${left}px`;
+    vimWindowBody.style.top = `${top}px`;
+    vimWindowBody.style.width = `${width}px`;
+    vimWindowBody.style.height = `${height}px`;
+    setMaximizeControl(false);
+    window.requestAnimationFrame(syncVimFillerLines);
+  };
+  const openDefaultFloatingWindow = () => {
+    if (!vimDesktop) return;
+    const desktop = vimDesktop.getBoundingClientRect();
+    if (isCompactViewport()) {
+      applyFloatingWindow({
+        left: Math.round(desktop.width * .14),
+        top: Math.round(desktop.height * .13),
+        width: desktop.width * .72,
+        height: desktop.height * .72,
+      });
+      return;
+    }
+    applyFloatingWindow({
+      left: Math.max(24, Math.round(desktop.width * .09)),
+      top: Math.max(24, Math.round(desktop.height * .09)),
+      width: desktop.width * .82,
+      height: desktop.height * .84,
+    });
+  };
+  window.requestAnimationFrame(() => {
+    openDefaultFloatingWindow();
+    if (isCompactViewport()) setVimWindowVisible(false, 'minimized');
+  });
+  const enterFloatingWindow = () => {
+    if (!vimWindow || !vimWindowBody || !vimDesktop || isFloating() || isMaximized()) return;
+    const desktop = vimDesktop.getBoundingClientRect();
+    const current = vimWindowBody.getBoundingClientRect();
+    const limits = windowSizeLimits(desktop);
+    const width = clamp(Math.round(current.width * .82), limits.minWidth, limits.maxWidth);
+    const height = clamp(Math.round(current.height * .82), limits.minHeight, limits.maxHeight);
+    applyFloatingWindow({ left: (desktop.width - width) / 2, top: (desktop.height - height) / 2, width, height });
+  };
+  const maximizeWindow = () => {
+    if (!vimWindow || !vimWindowBody || !vimDesktop) return;
+    if (!isFloating()) enterFloatingWindow();
+    const desktop = vimDesktop.getBoundingClientRect();
+    const current = vimWindowBody.getBoundingClientRect();
+    lastFloatingWindow = { left: current.left - desktop.left, top: current.top - desktop.top, width: current.width, height: current.height };
+    vimWindow.classList.remove('is-floating');
+    vimWindow.classList.add('is-maximized');
+    setMaximizeControl(true);
+    window.requestAnimationFrame(syncVimFillerLines);
+  };
+  const restoreFloatingWindow = (pointer?: PointerEvent) => {
+    if (!vimDesktop) return;
+    const desktop = vimDesktop.getBoundingClientRect();
+    const fallback = { width: Math.min(680, desktop.width - 48), height: Math.min(470, desktop.height - 48), left: 24, top: 24 };
+    const geometry = lastFloatingWindow ?? fallback;
+    const left = pointer ? pointer.clientX - desktop.left - geometry.width / 2 : geometry.left;
+    const top = pointer ? pointer.clientY - desktop.top - 14 : geometry.top;
+    applyFloatingWindow({ ...geometry, left, top });
+  };
+  const toggleMaximize = () => {
+    if (isMaximized()) restoreFloatingWindow();
+    else if (isFloating()) maximizeWindow();
+    else enterFloatingWindow();
+  };
+  vimMaximize?.addEventListener('click', toggleMaximize);
+  vimTitlebar?.addEventListener('dblclick', (event) => {
+    if (event.target instanceof Element && event.target.closest('button')) return;
+    toggleMaximize();
+  });
+  vimTitlebar?.addEventListener('pointerdown', (event) => {
+    if (event.button !== 0 || (event.target instanceof Element && event.target.closest('button'))) return;
+    event.preventDefault();
+    if ((!isFloating() && !isMaximized()) || !vimWindowBody || !vimDesktop) return;
+    let dragging = false;
+    let desktop = vimDesktop.getBoundingClientRect();
+    let start = vimWindowBody.getBoundingClientRect();
+    let offsetX = event.clientX - start.left;
+    let offsetY = event.clientY - start.top;
+    vimTitlebar.setPointerCapture?.(event.pointerId);
+    const move = (moveEvent: PointerEvent) => {
+      if (moveEvent.clientX < desktop.left || moveEvent.clientX > desktop.right || moveEvent.clientY < desktop.top || moveEvent.clientY > desktop.bottom) return;
+      if (!dragging && isMaximized()) {
+        if (Math.abs(moveEvent.clientX - event.clientX) < 4 && Math.abs(moveEvent.clientY - event.clientY) < 4) return;
+        restoreFloatingWindow(event);
+        desktop = vimDesktop.getBoundingClientRect();
+        start = vimWindowBody.getBoundingClientRect();
+        offsetX = event.clientX - start.left;
+        offsetY = event.clientY - start.top;
+      }
+      dragging = true;
+      applyFloatingWindow({ width: start.width, height: start.height, left: moveEvent.clientX - desktop.left - offsetX, top: moveEvent.clientY - desktop.top - offsetY });
+    };
+    const stop = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', stop);
+      if (vimTitlebar.hasPointerCapture?.(event.pointerId)) vimTitlebar.releasePointerCapture(event.pointerId);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', stop, { once: true });
+  });
+  document.querySelectorAll<HTMLElement>('[data-vim-resize]').forEach((handle) => handle.addEventListener('pointerdown', (event) => {
+    if (!vimWindowBody || !vimDesktop || !isFloating() || event.button !== 0) return;
+    event.preventDefault();
+    const edge = handle.dataset.vimResize ?? '';
+    const desktop = vimDesktop.getBoundingClientRect();
+    const limits = windowSizeLimits(desktop);
+    const startRect = vimWindowBody.getBoundingClientRect();
+    const start = { left: startRect.left - desktop.left, top: startRect.top - desktop.top, width: startRect.width, height: startRect.height };
+    handle.setPointerCapture?.(event.pointerId);
+    const move = (moveEvent: PointerEvent) => {
+      const deltaX = moveEvent.clientX - event.clientX;
+      const deltaY = moveEvent.clientY - event.clientY;
+      const right = start.left + start.width;
+      const bottom = start.top + start.height;
+      let left = start.left;
+      let top = start.top;
+      let width = start.width;
+      let height = start.height;
+      if (edge.includes('right')) width = clamp(start.width + deltaX, Math.min(limits.minWidth, desktop.width - start.left - 12), desktop.width - start.left - 12);
+      if (edge.includes('bottom')) height = clamp(start.height + deltaY, Math.min(limits.minHeight, desktop.height - start.top - 12), desktop.height - start.top - 12);
+      const grid = terminalGrid();
+      if (edge.includes('left')) {
+        const rawLeft = clamp(start.left + deltaX, 12, right - Math.min(limits.minWidth, right - 12));
+        width = snapToTerminalGrid(right - rawLeft, Math.min(limits.minWidth, right - 12), right - 12, grid.column, grid.widthFrame);
+        left = right - width;
+      }
+      if (edge.includes('top')) {
+        const rawTop = clamp(start.top + deltaY, 12, bottom - Math.min(limits.minHeight, bottom - 12));
+        height = snapToTerminalGrid(bottom - rawTop, Math.min(limits.minHeight, bottom - 12), bottom - 12, grid.row, grid.heightFrame);
+        top = bottom - height;
+      }
+      applyFloatingWindow({ left, top, width, height });
+    };
+    const stop = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', stop);
+      if (handle.hasPointerCapture?.(event.pointerId)) handle.releasePointerCapture(event.pointerId);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', stop, { once: true });
+  }));
+  const cursors = Array.from(document.querySelectorAll<HTMLElement>('.hero-title-cursor'));
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (titles.length && !prefersReducedMotion) {
+    const sentences = JSON.parse(titles[0].dataset.heroSentences ?? '[]');
+    titles.forEach((title) => { title.textContent = ''; });
+    let sentenceIndex = 0;
+    let position = 0;
+    let deleting = false;
+    const typeNext = () => {
+      const text = sentences[sentenceIndex];
+      titles.forEach((title) => {
+        title.textContent = text.slice(0, position);
+        const heading = title.closest('h1, .vim-document-heading');
+        heading?.setAttribute('aria-label', `${heading?.querySelector('.hero-lead')?.textContent ?? ''} ${text}`.trim());
+      });
+      window.requestAnimationFrame(syncVimFillerLines);
+      if (vimPosition) {
+        const baseColumn = Number(vimPosition.dataset.baseColumn ?? '1');
+        vimPosition.textContent = `1,${baseColumn + position}`;
+      }
+      if (!deleting && position < text.length) {
+        position += 1;
+        window.setTimeout(typeNext, 34);
+      } else if (!deleting) {
+        deleting = true;
+        window.setTimeout(typeNext, 2200);
+      } else if (position > 0) {
+        position -= 1;
+        window.setTimeout(typeNext, 20);
+      } else {
+        deleting = false;
+        sentenceIndex = (sentenceIndex + 1) % sentences.length;
+        window.setTimeout(typeNext, 550);
+      }
+    };
+    typeNext();
+  } else {
+    cursors.forEach((cursor) => { cursor.hidden = true; });
+  }
+</script>
