@@ -1,10 +1,13 @@
 ---
-title: "Extension-Enabled Dedicated-Server Hosting"
+resume: false
+title: "Operating an Extension-Enabled Linux Service"
 slug: "extension-enabled-dedicated-server-hosting"
-summary: "Field notes from hosting and operating an extension-enabled dedicated server on Linux, including ARM compatibility, service launch, extension handling, configuration, logs, and troubleshooting."
+summary: "Field notes from hosting and operating an extension-enabled stateful service on Linux, including ARM compatibility, service launch, extension handling, configuration, logs, and troubleshooting."
+resumeSummary: >-
+  Documented the deployment of an extension-enabled dedicated service on Linux, including launch configuration, filesystem layout, service management, logs, update routines, and extension installation. The troubleshooting work pays particular attention to ARM architecture and runtime compatibility, Docker experiments, configuration errors, and the difference between a successfully started process and a healthy usable service. It provides an operational baseline for running a constrained server reliably, with clear checks for architecture, ports, process state, and extension failures.
 category: "Server Hosting"
 tags:
-  - dedicated-server
+  - stateful-service
   - server-hosting
   - linux
   - vps
@@ -15,13 +18,13 @@ date: "2026-07-08"
 updated: "2026-07-25"
 featured: true
 published: true
-seoTitle: "Extension-Enabled Dedicated-Server Hosting on Linux"
-seoDescription: "A practical note about hosting an extension-enabled dedicated server on Linux, covering ARM VPS compatibility, extension setup, configuration, logs, and troubleshooting."
+seoTitle: "Operating an Extension-Enabled Linux Service"
+seoDescription: "A practical note about hosting an extension-enabled stateful service on Linux, covering ARM VPS compatibility, extension setup, configuration, logs, and troubleshooting."
 ---
 
 ## Why This Note Exists
 
-A dedicated service can be simple when it runs baseline and only needs a small group of users.
+A stateful service can be simple when it runs baseline and only needs a small group of users.
 
 It becomes more complex when the server uses ExtensionRuntime, custom extensions, Linux hosting, ARM hardware, Docker experiments, and Discord integration ideas.
 
@@ -55,7 +58,7 @@ This note is written as a field note, not as a universal guide.
 - logs and build errors are the real source of debugging information
 - custom extensions should be built and tested in a controlled path
 - service startup should be repeatable instead of based on remembered commands
-- Discord bridges and service behavior extensions should be added only after the base server is stable
+- external communication relays and service-behaviour extensions should be added only after the base service is stable
 
 ## Stack and Tools Used
 
@@ -115,7 +118,7 @@ A finished setup should allow:
 - custom extensions can be built and copied into the right place
 - logs are available when startup fails
 - architecture/runtime problems are identified quickly
-- Discord bridge integration can be added after server stability
+- external communication relay integration can be added after service stability
 - backups exist before extension or service data changes
 
 ## Directory Layout
@@ -324,9 +327,9 @@ Important considerations:
 - whether the rule creates duplication paths
 - whether dependent objects and multi-cell objects behave correctly
 
-## Discord Bridge Direction
+## External Communication Relay Direction
 
-A Discord bridge can connect the server with a text channel.
+An external communication relay can connect the service with a configured communication channel.
 
 Possible goals:
 
@@ -353,7 +356,7 @@ Useful log areas:
 - service data loading messages
 - extension loading messages
 - runtime exception output
-- Discord bridge logs if used
+- external communication relay logs if used
 
 The console should be more than a black box. If a extension fails, the logs should make it clear which extension or file caused the failure.
 
@@ -422,7 +425,7 @@ ExtensionRuntime errors usually point toward the failing API call, dependency, o
 
 extension changes can break persistent data, configs, or server startup.
 
-### Add Discord bridge after core stability
+### Add the communication relay after core stability
 
 Integrations should not be mixed into the first debugging phase.
 
@@ -501,7 +504,7 @@ A strong finished setup should show:
 - server port is documented and reachable
 - startup and crash logs are accessible
 - backup process exists
-- Discord bridge direction is clear
+- external communication relay direction is clear
 - architecture limitations are recorded
 - update/build/start commands are documented
 
@@ -519,7 +522,7 @@ Useful evidence for this note would include:
 - build error and fix examples
 - port/firewall configuration
 - user connection test
-- Discord bridge test if added
+- external communication relay test if added
 - backup archive list
 - architecture check output such as `uname -m`
 
@@ -541,7 +544,7 @@ It also assumes the server is intended for a small community or controlled group
 - missing backups
 - custom extension bugs creating exploits
 - unclear config paths
-- Discord bridge leaking unwanted output
+- external communication relay leaking unwanted output
 - port/firewall rules not matching the server config
 - manual commands being forgotten or changed over time
 

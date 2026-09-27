@@ -1,10 +1,13 @@
 ---
-title: "Dedicated-Server Deployment on Linux"
+resume: false
+title: "Deploying a Stateful Linux Service"
 slug: "dedicated-server-deployment-on-linux"
-summary: "Field notes from deploying and maintaining an extension-enabled dedicated server on Linux, including service management, extension compatibility, ports, console access, updates, backups, and relay planning."
+summary: "Field notes from deploying and maintaining an extension-enabled stateful service on Linux, including service management, extension compatibility, ports, console access, updates, backups, and relay planning."
+resumeSummary: >-
+  Built an operations reference for deploying and maintaining an extension-enabled dedicated service on Linux. It covers directory layout, configuration, port and firewall exposure, systemd lifecycle management, console access, update and backup practices, log-based debugging, compatibility checks, and planning for event relays. The note treats hosting as an operational system rather than a single launch command: the process must start predictably, survive restarts, expose only intended services, preserve data, and remain diagnosable when extensions or updates fail.
 category: "Server Hosting"
 tags:
-  - dedicated-server
+  - stateful-service
   - linux
   - vps
   - systemd
@@ -15,13 +18,13 @@ date: "2026-07-08"
 updated: "2026-07-25"
 featured: true
 published: true
-seoTitle: "Dedicated-Server Deployment on Linux"
-seoDescription: "A practical note about deploying an extension-enabled dedicated server on Linux with systemd service management, ports, extensions, backups, console access, and troubleshooting."
+seoTitle: "Deploying a Stateful Linux Service"
+seoDescription: "A practical note about deploying an extension-enabled stateful service on Linux with systemd service management, ports, extensions, backups, console access, and troubleshooting."
 ---
 
 ## Why This Note Exists
 
-A dedicated service looks simple from the outside: download server files, open a port, and start it.
+A stateful hosted service looks simple from the outside: deploy the application, open the required port, and start it.
 
 In practice, a server that people actually use needs more structure than that.
 
@@ -41,7 +44,7 @@ The server direction included:
 - server console access direction
 - port exposure
 - logs and crash troubleshooting
-- Discord bridge direction
+- external communication relay direction
 - service-data persistence
 - update and rollback thinking
 
@@ -55,7 +58,7 @@ The exact application stack version and extension list can change over time, but
 - ports and firewall rules should be documented
 - service data needs backups before updates or extension changes
 - console access is important for administration
-- Discord bridges add operational value but also add configuration risk
+- external communication relays add operational value but also add configuration risk
 - a small hosted server still benefits from logs, restart behavior, and clear update steps
 
 ## Stack and Tools Used
@@ -91,8 +94,8 @@ The exact application stack version and extension list can change over time, but
 
 ### Integration Direction
 
-- Discord bridge planning
-- server chat relay direction
+- external communication relay planning
+- application-message relay direction
 - event/achievement relay direction
 - command-output privacy direction
 
@@ -283,7 +286,7 @@ Examples from this direction included:
 - Jade Addons
 - monitoring and map-visualization extension direction
 - No Chat Reports direction
-- Discord bridge direction
+- external communication relay direction
 
 Some extensions may need to be removed if they break startup or conflict with the server version.
 
@@ -358,9 +361,9 @@ Look for:
 - corrupted config
 - crash report file path
 
-## Discord Bridge Direction
+## External Communication Relay Direction
 
-A Discord bridge can connect server chat and events with a text channel.
+An external communication relay can connect application messages and events with a configured communication channel.
 
 Useful bridge goals:
 
@@ -438,7 +441,7 @@ Some extensions are only useful on the client. Installing the wrong type on the 
 
 ### Hide command output from bridges where needed
 
-A Discord bridge should not leak admin commands, sensitive console output, or internal errors into public channels.
+An external communication relay should not leak admin commands, sensitive console output, or internal errors into public channels.
 
 ### Document the port and connection method
 
@@ -484,7 +487,7 @@ Likely causes:
 - broken datapack/resource pack
 - crash triggered by a loaded chunk or entity
 
-### Discord Bridge Does Not Work
+### External Communication Relay Does Not Work
 
 Likely causes:
 
@@ -520,7 +523,7 @@ A strong finished setup should show:
 - backups available
 - update workflow written down
 - console access method documented
-- Discord bridge behavior defined
+- external communication relay behavior defined
 - sensitive tokens/configs protected
 
 ## Evidence Worth Capturing
@@ -536,7 +539,7 @@ Useful evidence for this note would include:
 - firewall or provider port rule screenshot
 - successful client connection screenshot
 - backup archive list
-- Discord bridge test screenshot
+- external communication relay test screenshot
 - console command test
 - crash report example and fix
 
@@ -576,7 +579,7 @@ The server can evolve with new extensions or integrations, but the maintenance m
 
 This note does not claim to be a universal application stack hosting guide.
 
-It does not claim that every server needs extensions or a Discord bridge.
+It does not claim that every server needs extensions or an external communication relay.
 
 It does not claim that a cheap VPS is always enough for every extension-enabled server.
 

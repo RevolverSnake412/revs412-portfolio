@@ -1,7 +1,10 @@
 ---
+resume: false
 title: "Docker Deployment Scripts for Small Services"
 slug: "docker-deployment-scripts-for-small-services"
 summary: "Field notes from creating small deployment helper scripts for Docker-based services so build, run, restart, logs, cleanup, and updates are repeatable."
+resumeSummary: >-
+  Designed small deployment helper scripts for Docker services to turn repetitive build and recovery steps into explicit, reusable commands. The workflow covers environment-file handling, stable container naming, build and run options, stop and restart behaviour, logs, cleanup, and update routines, while keeping the project shape understandable for small deployments. It reduces deployment mistakes by making the normal operational path visible and repeatable, without introducing a heavyweight platform where a clear shell-level workflow is sufficient.
 category: "Deployment"
 tags:
   - docker
@@ -10,7 +13,7 @@ tags:
   - maintenance
   - automation
   - services
-  - homelab
+  - self-managed-infrastructure
 date: "2026-07-06"
 updated: "2026-07-25"
 featured: true
@@ -36,7 +39,7 @@ This kind of scripting is useful for small services such as:
 - bots
 - lightweight APIs
 - internal tools
-- homelab services
+- self-managed services
 - small automation workers
 - personal utilities
 - services deployed on a VPS or OpenWrt-capable device

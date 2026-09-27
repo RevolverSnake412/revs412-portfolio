@@ -1,12 +1,15 @@
 ---
-title: "CGNAT and Self-Hosting Limits"
+resume: false
+title: "CGNAT and Self-Managed Infrastructure Limits"
 slug: "cgnat-and-self-hosting-limits"
-summary: "Field notes explaining how CGNAT affects self-hosting, port forwarding, public IP scans, shared addresses, and practical alternatives for exposing home services."
+summary: "Field notes explaining how CGNAT affects self-managed infrastructure, port forwarding, public IP scans, shared addresses, and practical alternatives for exposing private services."
+resumeSummary: >-
+  Produced a practical networking reference explaining why carrier-grade NAT changes the rules for home-hosted services. It distinguishes a router WAN address from a genuinely routable public address, explains why port forwarding and local tests can appear correct while external access fails, and shows what scans reveal when several customers share one public IP. The note evaluates realistic alternatives including VPN-based access, reverse tunnels, relays, and hosted endpoints, while clarifying that dynamic DNS cannot overcome CGNAT by itself.
 category: "Networking"
 tags:
   - cgnat
   - nat
-  - self-hosting
+  - self-managed-infrastructure
   - port-forwarding
   - openwrt
   - isp
@@ -18,17 +21,17 @@ date: "2025-11-14"
 updated: "2026-07-25"
 featured: true
 published: true
-seoTitle: "CGNAT and Self-Hosting Limits"
-seoDescription: "A practical note about CGNAT, self-hosting, port forwarding, public IP scans, shared public IP behavior, and alternatives like VPS tunnels and VPN access."
+seoTitle: "CGNAT and Self-Managed Infrastructure Limits"
+seoDescription: "A practical note about CGNAT, self-managed infrastructure, port forwarding, public IP scans, shared public IP behavior, and alternatives like VPS tunnels and VPN access."
 ---
 
 ## Why This Note Exists
 
-This note explains one of the most common problems in home self-hosting: the difference between having internet access and being reachable from the internet.
+This note explains one of the most common problems in self-managed infrastructure: the difference between having internet access and being reachable from the internet.
 
 A home router can access the web normally while still being impossible to reach from outside. This often happens because of CGNAT.
 
-CGNAT changes how port forwarding works, how public IP addresses behave, and how realistic it is to host services like game servers, VPNs, web apps, or remote admin tools directly from home.
+CGNAT changes how port forwarding works, how public IP addresses behave, and how realistic it is to host public services, VPNs, web applications, or remote administration tools from a private network.
 
 This note is written from the perspective of practical troubleshooting: what is happening, how to test it, and what options exist when inbound hosting is blocked.
 
@@ -77,7 +80,7 @@ WAN public IP:25565
   ↓
 home router port forward
   ↓
-Minecraft server
+public service
 ```
 
 In CGNAT:
@@ -154,7 +157,7 @@ internal customer/session mapping
 
 If the ISP does not create that mapping, neither customer receives unsolicited inbound traffic.
 
-## Example: Two Minecraft Servers Behind CGNAT
+## Example: Two Public Services Behind CGNAT
 
 Imagine two customers behind the same ISP public IP.
 
@@ -329,11 +332,11 @@ Options include:
 
 Tools like a mesh VPN can make private access easier without exposing public ports.
 
-This is good for admin access, but less ideal for public game servers unless every player joins the mesh.
+This is good for administration access, but less suitable for public services unless every user joins the mesh.
 
 ### 5. Host Public Services on VPS
 
-For game servers or public services, sometimes the simpler answer is:
+For public services, sometimes the simpler answer is:
 
 ```txt
 host it on a VPS
@@ -341,11 +344,11 @@ host it on a VPS
 
 Home hosting is useful, but not always worth fighting the ISP network.
 
-## Public Game Servers Under CGNAT
+## Public Services Under CGNAT
 
-Game servers are often where CGNAT becomes obvious.
+Stateful public services are often where CGNAT becomes obvious.
 
-For a public game server, players need to reach:
+For a public service, users need to reach:
 
 ```txt
 public IP or domain + port
@@ -356,9 +359,9 @@ If CGNAT blocks inbound traffic, players cannot connect directly.
 Possible solutions:
 
 - request public IP from ISP
-- host the game server on VPS
+- host the public service on a VPS
 - use a VPS as a UDP relay/tunnel if practical
-- use a VPN/mesh network for private friend servers
+- use a VPN or mesh network for private services
 - choose a game/server platform with built-in relay/NAT traversal if available
 
 For public community servers, VPS hosting is often more reliable.
@@ -491,7 +494,7 @@ Look at:
 
 - router firewall logs if available
 - service logs
-- game server console
+- service console
 - VPN logs
 - connection attempts
 
@@ -508,7 +511,7 @@ Need private admin access only?
 Need public web app?
   → Use VPS, Cloudflare Tunnel, or reverse proxy through VPS.
 
-Need public game server?
+Need public service?
   → Prefer public IP or VPS.
 
 Need home-only service?
@@ -594,9 +597,9 @@ It also assumes the user controls their home router/OpenWrt configuration but do
 
 ## Current State
 
-This note represents the practical understanding needed before self-hosting from a home network.
+This note represents the practical understanding needed before operating services from a private network.
 
-It connects to OpenWrt, WireGuard, DDNS, game servers, public ports, and ISP limitations.
+It connects to OpenWrt, WireGuard, DDNS, public services, public ports, and ISP limitations.
 
 The main value is avoiding wasted troubleshooting when the real blocker is not the local server, but the ISP network path.
 

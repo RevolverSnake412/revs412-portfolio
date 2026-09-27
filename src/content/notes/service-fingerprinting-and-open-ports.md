@@ -1,7 +1,10 @@
 ---
+resume: false
 title: "Service Fingerprinting and Open Ports"
 slug: "service-fingerprinting-and-open-ports"
 summary: "Field notes explaining what open ports reveal, how service fingerprinting works, what attackers can infer from SSH/HTTP/HTTPS exposure, and how to reduce unnecessary public information leakage."
+resumeSummary: >-
+  Produced a practical security reference on what exposed ports disclose before an attacker even authenticates. It distinguishes port scanning from service fingerprinting and examines the clues available through SSH banners, HTTP headers, HTTPS certificates, TLS configuration, version signatures, and default application behaviour. The note connects these observations to defensive choices such as reducing unnecessary exposure, patching, hardening authentication, filtering access, and reviewing public information leakage, helping turn scan results into an actionable security baseline.
 category: "Networking"
 tags:
   - nmap
@@ -11,7 +14,7 @@ tags:
   - http
   - https
   - security
-  - self-hosting
+  - self-managed-infrastructure
   - hardening
   - networking
 date: "2024-07-14"
@@ -19,7 +22,7 @@ updated: "2026-07-25"
 featured: true
 published: true
 seoTitle: "Service Fingerprinting and Open Ports"
-seoDescription: "A practical note about open port exposure, Nmap scans, service fingerprinting, SSH/HTTP/HTTPS information leakage, and basic hardening for self-hosted services."
+seoDescription: "A practical note about open port exposure, Nmap scans, service fingerprinting, SSH/HTTP/HTTPS information leakage, and basic hardening for self-managed services."
 ---
 
 ## Why This Note Exists

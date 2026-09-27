@@ -1,31 +1,34 @@
 ---
-title: "Running a Discord Bot on OpenWrt"
+resume: false
+title: "Operating a Lightweight Messaging Service on OpenWrt"
 slug: "running-discord-bot-on-openwrt"
-summary: "Field notes from deploying and maintaining a small Discord bot on an OpenWrt device, including Node.js, environment files, Docker/procd service direction, logs, restarts, and update workflow."
+summary: "Field notes from deploying and maintaining a lightweight messaging automation service on an OpenWrt device, including Node.js, environment files, Docker/procd service direction, logs, restarts, and update workflow."
+resumeSummary: >-
+  Documented deployment and maintenance of a lightweight messaging automation service on OpenWrt hardware, where resources and service-management options differ from a conventional server. The setup covers Node.js runtime direction, secrets in environment files, application layout, direct execution, procd supervision, Docker alternatives, logs, restart behaviour, and update workflow. It focuses on choosing the lightest reliable operating model for the device and making failures observable, so the service can survive restarts and be updated without manual guesswork.
 category: "Deployment"
 tags:
   - openwrt
-  - discord-bot
+  - messaging-automation
   - nodejs
   - docker
   - deployment
   - service-management
-  - homelab
+  - self-managed-infrastructure
 date: "2026-07-06"
 updated: "2026-07-25"
 featured: true
 published: true
-seoTitle: "Running a Discord Bot on OpenWrt"
-seoDescription: "A practical note about deploying and maintaining a small Node.js Discord bot on OpenWrt with environment files, Docker or procd service management, logs, and update workflow."
+seoTitle: "Operating a Lightweight Messaging Service on OpenWrt"
+seoDescription: "A practical note about deploying and maintaining a lightweight Node.js messaging service on OpenWrt with environment files, Docker or procd service management, logs, and update workflow."
 ---
 
 ## Why This Note Exists
 
 OpenWrt is usually treated as router firmware, not as a general application server.
 
-But on capable hardware, it can run small internal services if the setup is kept simple and maintainable. A Discord bot is a good example of a small service that can run continuously without needing a full VPS.
+But on capable hardware, it can run small internal services if the setup is kept simple and maintainable. A messaging automation service is a good example of a workload that can run continuously without needing a full VPS.
 
-This note documents the practical side of running a small Node.js Discord bot on OpenWrt: where to place the files, how to handle environment variables, how to run it as a service, how to restart it, and how to debug common deployment issues.
+This note documents the practical side of running a small Node.js messaging service on OpenWrt: where to place the files, how to handle environment variables, how to run it as a service, how to restart it, and how to debug common deployment issues.
 
 The point is not that the bot runs on OpenWrt because that is impressive. The point is learning how to operate a small service on constrained infrastructure without losing track of logs, secrets, updates, and restarts.
 
@@ -283,7 +286,7 @@ The exact method matters less than consistency.
 
 ## Common Failure Points
 
-### Bot Starts Locally but Not on OpenWrt
+### Service Starts Locally but Not on OpenWrt
 
 Likely causes:
 
@@ -314,7 +317,7 @@ docker ps -a
 docker logs <container-name>
 ```
 
-### Bot Is Online but Slash Commands Are Wrong
+### Service Is Active but Commands Are Wrong
 
 Likely causes:
 
@@ -377,7 +380,7 @@ Logs should make failures obvious.
 
 ### Avoid exposing ports unnecessarily
 
-Most Discord bots only need outbound access.
+Most messaging automation services only need outbound access.
 
 Do not open public ports unless the bot runs a web server or webhook listener that actually needs inbound traffic.
 
@@ -443,9 +446,9 @@ The setup assumes that internet access, DNS, and system time are stable, because
 
 ## Current State
 
-This note represents the deployment and maintenance direction for running a small Discord bot on OpenWrt.
+This note represents the deployment and maintenance direction for running a lightweight messaging automation service on OpenWrt.
 
-The important lesson is that even a small bot needs operational structure when it runs continuously: environment files, service management, restart behavior, logs, and repeatable deployment steps.
+The important lesson is that even a small automation service needs operational structure when it runs continuously: environment files, service management, restart behavior, logs, and repeatable deployment steps.
 
 This connects directly to other notes about OpenWrt, Docker scripts, DNS, and service troubleshooting.
 

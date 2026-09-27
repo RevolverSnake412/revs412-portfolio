@@ -1,12 +1,15 @@
 ---
-title: "Building a Grid-Based Maze Game"
+resume: false
+title: "Building a Grid-Based Interactive System"
 slug: "building-a-grid-based-maze-game"
-summary: "Field notes from building a browser-based maze game focused on grid modeling, movement rules, collision handling, rendering, state management, and algorithmic thinking."
+summary: "Field notes from building a browser-based grid interaction system focused on data modeling, movement rules, collision handling, rendering, state management, and algorithmic thinking."
+resumeSummary: >-
+  Built and documented a browser-based grid system that uses a maze as a focused exercise in state modelling, rendering, and interaction rules. The implementation defines coordinates, cell types, board representation, user-controlled movement, boundary checks, collision handling, completion conditions, and reset behaviour before visual polish. It demonstrates how a small interactive application becomes reliable when the data model is the source of truth and display updates follow explicit state transitions rather than scattered DOM changes.
 category: "Interactive Systems"
 tags:
   - javascript
   - frontend
-  - game-logic
+  - interaction-logic
   - maze
   - algorithms
   - grid
@@ -18,27 +21,27 @@ date: "2024-08-01"
 updated: "2026-07-25"
 featured: true
 published: true
-seoTitle: "Building a Grid-Based Maze Game"
-seoDescription: "A practical note about building a grid-based maze game, covering maze representation, player movement, collision handling, rendering, state management, win conditions, and frontend architecture."
+seoTitle: "Building a Grid-Based Interactive System"
+seoDescription: "A practical note about building a grid-based interactive system, covering maze representation, movement, collision handling, rendering, state management, completion conditions, and frontend architecture."
 ---
 
 ## Why This Note Exists
 
-This note documents the process of building a grid-based maze game.
+This note documents the process of building a grid-based interactive system.
 
-The value of the project is not that it is a game. The useful part is the interactive system behind it:
+The value of the project is the interactive system behind it:
 
 - representing a world as data
 - rendering that world to the screen
 - handling keyboard input
 - enforcing movement rules
 - detecting walls and collisions
-- tracking player state
+- tracking interaction state
 - detecting win conditions
-- keeping UI and game logic separate
+- keeping UI and interaction logic separate
 - making the application predictable instead of random DOM manipulation
 
-A maze game is a small project, but it touches many concepts that appear in larger software systems.
+A maze-based interface is a small project, but it touches many concepts that appear in larger software systems.
 
 ## Project Context
 

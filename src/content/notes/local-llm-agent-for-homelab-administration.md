@@ -1,7 +1,10 @@
 ---
-title: "Local LLM Agent for Homelab Administration"
+resume: true
+title: "Local LLM Agent for Infrastructure Administration"
 slug: "local-llm-agent-for-homelab-administration"
-summary: "Field notes from running local Qwen LLM models on a desktop GPU and connecting them to an agent workflow for homelab, network, and system administration tasks."
+summary: "Field notes from running local Qwen LLM models on a desktop GPU and connecting them to an agent workflow for self-hosted infrastructure, network, and system administration tasks."
+resumeSummary: >-
+  Explored a local AI administration workflow using Qwen models on a desktop GPU and an agent layer for self-hosted infrastructure, network, and systems tasks. The work covers model hosting, GPU inference considerations, tool boundaries, task examples, and the distinction between a model that can suggest actions and a system that can safely execute them. It evaluates local inference as a private, controllable support layer for diagnostics, documentation, and routine administration while retaining human review and limited permissions for impactful operations.
 category: "AI Infrastructure"
 tags:
   - local-ai
@@ -9,7 +12,7 @@ tags:
   - qwen
   - gpu-inference
   - rtx-5070
-  - homelab
+  - self-managed-infrastructure
   - system-administration
   - network-automation
   - ai-agent
@@ -18,13 +21,13 @@ date: "2026-05-05"
 updated: "2026-07-25"
 featured: true
 published: true
-seoTitle: "Local LLM Agent for Homelab Administration"
-seoDescription: "A practical note about running local Qwen LLM models on an RTX 5070 and connecting them to an agent workflow for homelab, network, and system administration support."
+seoTitle: "Local LLM Agent for Infrastructure Administration"
+seoDescription: "A practical note about running local Qwen LLM models on an RTX 5070 and connecting them to an agent workflow for self-hosted infrastructure, network, and system administration support."
 ---
 
 ## Why This Note Exists
 
-This note documents an experiment in running a local LLM agent for homelab and system administration tasks.
+This note documents an experiment in running a local LLM agent for self-hosted infrastructure and system administration tasks.
 
 The goal was not to build a toy chatbot. The goal was to test whether a locally hosted language model could become a useful assistant for technical work:
 

@@ -1,11 +1,14 @@
 ---
-title: "Real-Time Community Relay"
+resume: false
+title: "Real-Time Event and Message Relay"
 slug: "real-time-community-relay"
-summary: "Field notes from building a server-side relay that connects live service events and chat with a Discord channel."
+summary: "Field notes from building a server-side relay that connects live service events and application messaging with an external communication platform."
+resumeSummary: >-
+  Built a server-side relay that connects real-time service events and application messaging with an external communication platform. The design covers message flow in both directions, channel filtering, consistent formatting, configuration, event selection, and loop prevention so automated messages do not echo indefinitely between systems. It treats the integration as an operational communication bridge: useful events must be delivered promptly and clearly, while permissions, message origin, and failure behaviour remain controlled enough for the relay to be trusted in day-to-day use.
 category: "Real-Time Integrations"
 tags:
   - server-side-extension
-  - discord
+  - external-messaging
   - relay
   - csharp
   - real-time-integration
@@ -15,15 +18,15 @@ date: "2026-07-08"
 updated: "2026-07-25"
 featured: true
 published: true
-seoTitle: "Real-Time Community Relay"
-seoDescription: "A practical note about building a server-side relay for live chat, Discord messages, service events, configuration, and testing."
+seoTitle: "Real-Time Event and Message Relay"
+seoDescription: "A practical note about building a server-side relay for application messaging, external messages, service events, configuration, and testing."
 ---
 
 ## Why This Note Exists
 
-This note documents a custom server-side Discord relay integration.
+This note documents a custom server-side event and message relay.
 
-The goal was to connect the hosted service with a Discord text channel so the community could see what was happening in-application without being connected to the server all the time.
+The goal was to connect the hosted service with an external communication channel so operators and users could follow application activity without being connected all the time.
 
 The relay direction included:
 
@@ -72,7 +75,7 @@ The purpose was not only “send chat messages.” The purpose was to make the s
 - user join/leave handling
 - server event hooks where available
 
-### Discord Layer
+### External Communication Layer
 
 - Discord bot account
 - bot token
@@ -111,7 +114,7 @@ A finished version should support:
 
 The relay needs two clear directions.
 
-### hosted service to Discord
+### Hosted Service to External Platform
 
 ```txt
 user sends in-application chat
@@ -129,7 +132,7 @@ Example format:
 [hosted service] PlayerName: message
 ```
 
-### Discord to hosted service
+### External Platform to Hosted Service
 
 ```txt
 Discord user sends message in configured channel
@@ -171,7 +174,7 @@ The extension needs rules like:
 
 Loop prevention is one of the most important parts of relay design.
 
-## Discord Channel Filtering
+## Communication Channel Filtering
 
 The bot should not listen to every channel.
 
@@ -256,7 +259,7 @@ Too many events can make Discord noisy.
 
 A good relay should allow event categories to be enabled or disabled.
 
-## Discord to service Risks
+## External Platform-to-Service Risks
 
 Discord-to-service is more sensitive than service-to-Discord.
 
@@ -272,7 +275,7 @@ If Discord messages appear in-application, the extension should consider:
 
 Filtering is not optional for a stable relay.
 
-## service to Discord Risks
+## Service-to-Platform Risks
 
 service-to-Discord is easier but still needs care.
 
@@ -338,7 +341,7 @@ A bot for chat relay does not need full Discord administrator permissions.
 
 ## Testing Checklist
 
-### service to Discord
+### Service to External Platform
 
 - send normal hosted service chat
 - verify Discord receives the message
@@ -349,7 +352,7 @@ A bot for chat relay does not need full Discord administrator permissions.
 - test multiple users chatting
 - test join/leave events if enabled
 
-### Discord to service
+### External Platform to Service
 
 - send Discord message in the configured channel
 - verify hosted service receives it

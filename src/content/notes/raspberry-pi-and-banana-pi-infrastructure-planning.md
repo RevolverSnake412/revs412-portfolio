@@ -1,7 +1,10 @@
 ---
+resume: false
 title: "Raspberry Pi and Banana Pi Infrastructure Planning"
 slug: "raspberry-pi-and-banana-pi-infrastructure-planning"
-summary: "Field notes from comparing Raspberry Pi and Banana Pi options for OpenWrt routing, VLAN-based networks, VPN access, homelab separation, and small infrastructure deployments."
+summary: "Field notes from comparing Raspberry Pi and Banana Pi options for OpenWrt routing, VLAN-based networks, VPN access, self-hosted infrastructure separation, and small infrastructure deployments."
+resumeSummary: >-
+  Evaluated Raspberry Pi and Banana Pi hardware as practical components in a small network and self-hosted infrastructure architecture. The planning compares routing capacity, Ethernet layout, storage, power, OpenWrt support, VLAN and router-on-a-stick use, WireGuard access, managed-switch integration, and isolation requirements rather than selecting boards on specifications alone. It establishes a decision framework for matching hardware to workload and topology, including when a low-power single-board device is sufficient and when better network interfaces or expansion options justify a different platform.
 category: "Infrastructure"
 tags:
   - raspberry-pi
@@ -10,7 +13,7 @@ tags:
   - router
   - vlan
   - vpn
-  - homelab
+  - self-managed-infrastructure
   - networking
   - hardware-planning
   - infrastructure
@@ -19,7 +22,7 @@ updated: "2026-07-25"
 featured: true
 published: true
 seoTitle: "Raspberry Pi and Banana Pi Infrastructure Planning"
-seoDescription: "A practical note about choosing between Raspberry Pi and Banana Pi hardware for OpenWrt routing, VLANs, VPN access, homelab segmentation, and small infrastructure planning."
+seoDescription: "A practical note about choosing between Raspberry Pi and Banana Pi hardware for OpenWrt routing, VLANs, VPN access, self-hosted infrastructure segmentation, and small infrastructure planning."
 ---
 
 ## Why This Note Exists

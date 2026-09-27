@@ -1,7 +1,10 @@
 ---
-title: "DDNS Setup with DuckDNS on OpenWrt"
+resume: false
+title: "DDNS for Remote Access on OpenWrt"
 slug: "ddns-setup-with-duckdns-on-openwrt"
-summary: "Field notes from setting up DuckDNS on OpenWrt for dynamic DNS, remote access, WireGuard endpoints, and home self-hosting workflows."
+summary: "Field notes from setting up DuckDNS on OpenWrt for dynamic DNS, remote access, WireGuard endpoints, and self-managed infrastructure workflows."
+resumeSummary: >-
+  Documented a DuckDNS dynamic-DNS setup on OpenWrt for remote administration and self-managed services whose public address can change. The configuration covers update URLs and credentials, the router DDNS client, verification of the published record, and how the hostname fits into WireGuard and externally reachable services. It also establishes the correct boundary: DDNS provides stable naming for a changing public address, but it does not create public reachability where carrier NAT or firewall policy prevents it.
 category: "Networking"
 tags:
   - openwrt
@@ -9,7 +12,7 @@ tags:
   - ddns
   - dynamic-dns
   - wireguard
-  - self-hosting
+  - self-managed-infrastructure
   - remote-access
   - firewall
   - cgnat
@@ -18,7 +21,7 @@ date: "2025-02-06"
 updated: "2026-07-25"
 featured: true
 published: true
-seoTitle: "DDNS Setup with DuckDNS on OpenWrt"
+seoTitle: "DDNS for Remote Access on OpenWrt"
 seoDescription: "A practical note about configuring DuckDNS dynamic DNS on OpenWrt, verifying updates, using it with WireGuard, and understanding its limits under CGNAT."
 ---
 
@@ -26,7 +29,7 @@ seoDescription: "A practical note about configuring DuckDNS dynamic DNS on OpenW
 
 This note documents the practical setup direction for using DuckDNS with OpenWrt.
 
-The goal was to make a home network reachable through a stable domain name even when the public IP changes.
+The goal was to make a private network reachable through a stable domain name even when the public IP changes.
 
 Instead of remembering or manually checking the current public IP, a DDNS hostname can point to the latest address:
 

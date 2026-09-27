@@ -1,7 +1,10 @@
 ---
+resume: false
 title: "OpenWrt Storage Expansion on Raspberry Pi"
 slug: "openwrt-storage-expansion-on-raspberry-pi"
 summary: "Field notes from expanding OpenWrt storage on a Raspberry Pi so the router can safely support extra packages, logs, and small services without running into overlay space limits."
+resumeSummary: >-
+  Documented storage expansion for an OpenWrt installation on Raspberry Pi hardware so the router can support additional packages, logs, and small services without exhausting its writable overlay. The work covers storage checks, overlay-space constraints, what changes after expansion, what remains limited by hardware or memory, and how package and service placement should be planned. It turns a common hidden constraint into an operational decision, helping prevent upgrades and installs from failing because the device was treated like a full server.
 category: "Networking"
 tags:
   - openwrt
@@ -10,7 +13,7 @@ tags:
   - overlay
   - sd-card
   - router
-  - homelab
+  - self-managed-infrastructure
 date: "2026-07-06"
 updated: "2026-07-25"
 featured: false
@@ -167,7 +170,7 @@ roughly 50+ GB free after setup
 enough room for packages, scripts, logs, and small service files
 ```
 
-This changed the router from a constrained firmware-only device into a more usable homelab router platform.
+This changed the router from a constrained firmware-only device into a more usable self-managed infrastructure platform.
 
 That said, the router still remained a router first.
 
@@ -488,7 +491,7 @@ This note represents the storage expansion direction for the Raspberry Pi OpenWr
 
 The main value is that the router gained enough writable space for practical maintenance, extra packages, scripts, and small services without constantly fighting the default overlay limit.
 
-This connects directly to the notes about OpenWrt setup, AdGuard Home, WireGuard, Discord bot hosting, and Docker helper scripts.
+This connects directly to the notes about OpenWrt setup, AdGuard Home, WireGuard, messaging-service hosting, and Docker helper scripts.
 
 ## What This Note Does Not Claim
 

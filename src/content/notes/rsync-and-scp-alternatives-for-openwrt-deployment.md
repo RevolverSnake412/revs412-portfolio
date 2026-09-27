@@ -1,7 +1,10 @@
 ---
+resume: false
 title: "Rsync and SCP Alternatives for OpenWrt Deployment"
 slug: "rsync-and-scp-alternatives-for-openwrt-deployment"
 summary: "Field notes from deploying small services to OpenWrt when rsync is unreliable, using SCP, tar over SSH, Git pull, and simple deployment scripts instead."
+resumeSummary: >-
+  Documented lightweight deployment methods for OpenWrt devices when rsync is unavailable, unreliable, or too heavy for the target. The alternatives include SCP with compatibility mode, streamed tar archives over SSH, upload-and-extract flows, Git pull on the device, and copying only runtime artifacts built elsewhere. Each method is framed around constrained router storage, CPU, package availability, and recovery needs, giving small services a repeatable deployment path without assuming a full Linux-server toolchain.
 category: "Deployment"
 tags:
   - openwrt
@@ -49,7 +52,7 @@ The environment included:
 
 - Raspberry Pi running OpenWrt
 - SSH access from a workstation
-- Node.js/Discord bot services
+  - Node.js automation services
 - Docker-based service direction
 - procd service direction
 - files placed under `/opt`
@@ -469,7 +472,7 @@ Verify:
 ```txt
 service is running
 logs look clean
-bot/service is online
+service is online
 expected command/feature works
 old code is not still running
 environment file loaded
@@ -694,7 +697,7 @@ This note assumes the target device is OpenWrt and reachable over SSH.
 
 It assumes the service is small enough that SCP or tar-over-SSH is practical.
 
-It also assumes the deployment target is controlled by the user, such as a homelab router or internal device.
+It also assumes the deployment target is controlled by the operator, such as a self-managed router or internal device.
 
 ## Key Risks
 

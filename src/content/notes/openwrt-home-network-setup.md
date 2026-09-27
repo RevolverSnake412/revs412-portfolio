@@ -1,7 +1,10 @@
 ---
+resume: false
 title: "OpenWrt Home Network Setup"
 slug: "openwrt-home-network-setup"
 summary: "Field notes from building a practical OpenWrt-based home network with custom routing, DNS filtering, VPN access, VLAN direction, and service troubleshooting."
+resumeSummary: >-
+  Built and documented an OpenWrt-based home network that combines routing, DHCP and DNS responsibilities, filtering, remote VPN access, VLAN planning, and service troubleshooting. The design makes the role of each network component explicit, then verifies client addressing, resolver paths, firewall policy, and service reachability layer by layer. It is intended as a maintainable small-infrastructure baseline: custom enough to support separated services and remote administration, but documented well enough to recover from a broken route, DNS path, or configuration change.
 category: "Networking"
 tags:
   - openwrt
@@ -11,7 +14,7 @@ tags:
   - firewall
   - vlan
   - vpn
-  - homelab
+  - self-managed-infrastructure
 date: "2026-07-06"
 updated: "2026-07-25"
 featured: true
