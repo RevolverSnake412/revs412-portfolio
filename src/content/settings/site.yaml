@@ -5,7 +5,7 @@ site:
   heroLead: Practical technical systems,
   heroDocument: intro.md
   heroSubtitleLines:
-    - I work on small business tools, infrastructure, automation, deployment, and troubleshooting.
+    - I work on business tools, software systems, infrastructure, automation, deployment, and troubleshooting.
     - My focus is choosing the right level of complexity and making systems understandable, usable, and reliable.
   heroSentences:
     - built with clear reasoning.
@@ -52,5 +52,7 @@ site:
     discord: '@revs412'
     discordUrl: https://discordapp.com/users/455960409082560524
     telegram: '@revs412'
+    github: https://github.com/RevolverSnake412
+    linkedin: https://www.linkedin.com/in/revs412/
     availability: Available for considered technical work.
     location: Remote / Morocco
