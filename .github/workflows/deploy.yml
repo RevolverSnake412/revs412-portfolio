@@ -30,6 +30,8 @@ jobs:
         uses: actions/configure-pages@v5
       - name: Install dependencies
         run: npm ci
+      - name: Install Chromium for resume generation
+        run: npx playwright install --with-deps chromium
       - name: Build
         run: npm run build
         env:

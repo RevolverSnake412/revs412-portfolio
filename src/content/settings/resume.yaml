@@ -1,0 +1,22 @@
+resume:
+  brand: revs412
+  name: Oussama Ait Agnaou
+  headline: Independent Software Engineer & Network Specialist
+  summary: >-
+    Software Engineer and Network Specialist focused on designing, building, and maintaining reliable technical systems. My work spans business tools, software systems, network infrastructure, automation, deployment, troubleshooting, and technical documentation. I approach projects by clarifying real requirements, choosing maintainable solutions, and making the resulting system understandable for both operators and future developers.
+  portfolioUrl: https://revs412.me
+  linkedinUrl: https://www.linkedin.com/in/revs412/
+  githubUrl: https://github.com/RevolverSnake412
+  capabilities:
+    - Business & Software Systems
+    - Network Infrastructure & Secure Remote Access
+    - Automation, Deployment & Operations
+    - Troubleshooting & Technical Documentation
+  education:
+    - institution: OFPPT
+      program: "Digital Infrastructure: Systems & Networks"
+      dates: 2022 – 2024
+    - institution: African Leadership X (ALX)
+      program: Software Engineering Programme — Backend Development
+      dates: 2023 – 2024
+      detail: Software Engineer Certificate · September 2024

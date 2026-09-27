@@ -1,0 +1,35 @@
+---
+import { getCollection, getEntry } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const [settings, profile, allWork, allNotes] = await Promise.all([
+  getEntry('settings', 'site'), getEntry('resume', 'resume'),
+  getCollection('work', ({ data }) => data.published),
+  getCollection('notes', ({ data }) => data.published && data.resume === true),
+]);
+if (!settings || !profile) throw new Error('Missing resume or site settings.');
+const work = allWork.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const notes = allNotes.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const base = import.meta.env.BASE_URL;
+const displayDate = (date: Date) => new Intl.DateTimeFormat('en', { month: 'short', year: 'numeric', timeZone: 'UTC' }).format(date);
+---
+<BaseLayout title="Resume · revs412" description="A concise record of practical technical work by revs412." showCommandContext={false}>
+  <main class="resume-page">
+    <div class="resume-actions shell"><a href={`${base}Oussama-Ait-Agnaou-Resume.pdf`} download>Download PDF ↓</a></div>
+    <article class="resume-document">
+      <header class="resume-header">
+        <p class="resume-brand">{profile.data.brand}</p>
+        {profile.data.name && <h1>{profile.data.name}</h1>}
+        <p class="resume-headline">{profile.data.headline}</p>
+        <p class="resume-contact"><a href={`mailto:${settings.data.contact.email}`}>{settings.data.contact.email}</a><span aria-hidden="true"> · </span><a href={profile.data.portfolioUrl}>revs412.me</a><span aria-hidden="true"> · </span><a href={profile.data.linkedinUrl}>LinkedIn</a><span aria-hidden="true"> · </span><a href={profile.data.githubUrl}>GitHub</a></p>
+        <p class="resume-location">Remote / Morocco</p>
+      </header>
+      <section class="resume-section" aria-labelledby="profile-heading"><h2 id="profile-heading">Profile</h2><p>{profile.data.summary}</p></section>
+      <section class="resume-section" aria-labelledby="capabilities-heading"><h2 id="capabilities-heading">Capabilities</h2><ul class="resume-capabilities">{profile.data.capabilities.map((capability) => <li>{capability}</li>)}</ul></section>
+      <section class="resume-section" aria-labelledby="experience-heading"><h2 id="experience-heading">Professional Experience</h2><div class="resume-entries resume-experience"><article class="resume-entry"><div class="resume-entry-heading"><div><h3>Independent Software Engineer &amp; Network Specialist</h3><p class="resume-entry-meta">Independent · Remote / Morocco</p></div><p class="resume-experience-period">2025 – Present</p></div><ul class="resume-experience-details"><li>Deliver software, infrastructure, automation, deployment, and troubleshooting work for independent clients.</li><li>Design and maintain backend services, business workflows, network access, and self-hosted systems.</li><li>Translate technical requirements into maintainable implementations and clear operational documentation.</li><li>Support projects from investigation through deployment, verification, and handover.</li></ul></article><article class="resume-entry"><div class="resume-entry-heading"><div><h3>IT Helpdesk</h3><p class="resume-entry-meta">HDI COM</p></div><p class="resume-experience-period">2024</p></div><ul class="resume-experience-details"><li>Provided first-line support for workstations, software, connectivity, and user-access issues.</li><li>Diagnosed Windows, network, and peripheral faults, escalating unresolved incidents with clear findings.</li><li>Assisted users with setup, configuration, and routine technical troubleshooting.</li></ul></article></div></section>
+      <section class="resume-section" aria-labelledby="education-heading"><h2 id="education-heading">Education</h2><div class="resume-entries resume-education">{profile.data.education.map((entry) => <article class="resume-entry"><div class="resume-entry-heading"><div><h3>{entry.institution}</h3><p class="resume-entry-meta">{entry.program}</p>{entry.detail && <p class="resume-education-detail">{entry.detail}</p>}</div><p class="resume-experience-period">{entry.dates}</p></div></article>)}</div></section>
+      <section class="resume-section" aria-labelledby="work-heading"><div class="resume-section-start"><h2 id="work-heading">Selected Work</h2><div class="resume-entries">{work.slice(0, 1).map((item) => <article class="resume-entry"><div class="resume-entry-heading"><div><h3><a href={`${base}work/${item.data.slug}`}>{item.data.title}</a></h3><p class="resume-entry-meta">{item.data.type}{item.data.client && <> · {item.data.client}</>}</p></div><time datetime={item.data.date.toISOString()}>{displayDate(item.data.date)}</time></div><p>{item.data.resumeSummary}</p></article>)}</div></div>{work.length > 1 && <div class="resume-entries resume-entries-continuation">{work.slice(1).map((item) => <article class="resume-entry"><div class="resume-entry-heading"><div><h3><a href={`${base}work/${item.data.slug}`}>{item.data.title}</a></h3><p class="resume-entry-meta">{item.data.type}{item.data.client && <> · {item.data.client}</>}</p></div><time datetime={item.data.date.toISOString()}>{displayDate(item.data.date)}</time></div><p>{item.data.resumeSummary}</p></article>)}</div>}</section>
+      {notes.length > 0 && <section class="resume-section" aria-labelledby="notes-heading"><div class="resume-section-start"><h2 id="notes-heading">Selected Technical Notes</h2><div class="resume-entries">{notes.slice(0, 1).map((item) => <article class="resume-entry"><div class="resume-entry-heading"><div><h3><a href={`${base}notes/${item.data.slug}`}>{item.data.title}</a></h3><p class="resume-entry-meta">{item.data.category}{item.data.client && <> · {item.data.client}</>}</p></div><time datetime={item.data.date.toISOString()}>{displayDate(item.data.date)}</time></div><p>{item.data.resumeSummary}</p></article>)}</div></div>{notes.length > 1 && <div class="resume-entries resume-entries-continuation">{notes.slice(1).map((item) => <article class="resume-entry"><div class="resume-entry-heading"><div><h3><a href={`${base}notes/${item.data.slug}`}>{item.data.title}</a></h3><p class="resume-entry-meta">{item.data.category}{item.data.client && <> · {item.data.client}</>}</p></div><time datetime={item.data.date.toISOString()}>{displayDate(item.data.date)}</time></div><p>{item.data.resumeSummary}</p></article>)}</div>}</section>}
+    </article>
+  </main>
+</BaseLayout>
