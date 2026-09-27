@@ -21,6 +21,802 @@ date: "2024-08-01"
 updated: "2026-07-25"
 featured: true
 published: true
+translations:
+  fr:
+    title: "Création d’un jeu de labyrinthe basé sur une grille"
+    category: "Systèmes interactifs"
+    summary: "Notes sur un jeu de labyrinthe web autour de la modélisation de grille, des déplacements, des collisions, du rendu, de l’état et du raisonnement algorithmique."
+    resumeSummary: >-
+      Construit et documenté un système de grille basé sur le navigateur qui utilise un labyrinthe comme un
+      exercice ciblé dans la modélisation d'état, le rendu, et les règles d'interaction. L'implémentation
+      définit les coordonnées, les types de cellules, la représentation du tableau, le mouvement contrôlé par
+      l'utilisateur, les vérifications des frontières, la manipulation des collisions, les conditions
+      d'achèvement, et réinitialiser le comportement avant le vernis visuel. Il montre comment une petite
+      application interactive devient fiable lorsque le modèle de données est la source de vérité et les mises
+      à jour d'affichage suivent des transitions d'état explicites plutôt que des changements DOM dispersés.
+    body: |-
+
+      ## Pourquoi cette note existe
+
+      La présente note documente le processus de construction d'un système interactif basé sur la grille.
+
+      La valeur du projet est le système interactif qui le sous-tend :
+
+      - représentant un monde en tant que données
+      - rendre ce monde à l'écran
+      - Traitement de l'entrée du clavier
+      - Application des règles de circulation
+      - détection des murs et des collisions
+      - état d'interaction de suivi
+      - détection des conditions de gain
+      - garder la logique d'assurance-chômage et d'interaction séparée
+      - rendant l'application prévisible au lieu de manipulation aléatoire DOM
+
+      Une interface labyrinthe est un petit projet, mais elle touche de nombreux concepts qui apparaissent dans les grands systèmes logiciels.
+
+      ## Contexte du projet
+
+      Le projet a été construit comme une application interactive basée sur le navigateur.
+
+      Il fait partie du portefeuille comme une note de fond de frontend/game-logical, pas comme un projet de jouet.
+
+      Les idées techniques importantes sont:
+
+      ```txt
+      grid data
+        ↓
+      rendered interface
+        ↓
+      player input
+        ↓
+      state update
+        ↓
+      collision check
+        ↓
+      new render
+        ↓
+      win/loss condition
+      ```
+
+      Cette boucle est proche du nombre de systèmes interactifs.
+
+      Même si la couche visuelle est simple, le projet est utile car il nécessite des transitions d'état claires.
+
+      ## Ce que ce projet veut prouver
+
+      - l'interface utilisateur interactive a besoin d'un modèle d'état fiable
+      - un labyrinthe est une structure de données avant une mise en page visuelle
+      - entrée clavier doit mettre à jour l'état par des règles
+      - La détection des collisions doit être déterministe
+      - rendu devrait refléter l'état, pas le remplacer
+      - petits jeux sont bons pour tester la séparation logique
+      - les algorithmes peuvent être rendus visibles par l'interface utilisateur
+      - les projets frontend peuvent démontrer plus que le style de page
+
+      ## Pioche et outils utilisés
+
+      ### Couche frontale
+
+      - HTML
+      - CSS
+      - JavaScript
+      - Direction de rendu DOM
+      - gestion des événements clavier
+      - direction de mise en page adaptée
+
+      ### Couche logique du jeu
+
+      - représentation du réseau
+      - position du joueur
+      - détection des parois et des voies
+      - validation du mouvement
+      - condition de gain
+      - niveau de remise
+      - minuterie/déplacement facultatif
+
+      ### Calque Algorithme
+
+      - données de mise en page du labyrinthe
+      - direction possible de la génération de procédures
+      - validation du chemin
+      - systèmes de coordination
+      - État basé sur un tableau
+      - Contrôles aux frontières
+
+      ### Calque UI
+
+      - labyrinthe
+      - marqueur du lecteur
+      - cellules de démarrage/fin
+      - cellules murales
+      - contrôles
+      - État du texte
+      - direction du bouton de redémarrage
+
+      ## Construction prévue
+
+      La construction prévue est un jeu de labyrinthe jouable où le joueur passe à travers une grille d'un point de départ à une sortie.
+
+      Une version terminée devrait prendre en charge:
+
+      - grille de labyrinthe visible
+      - position de départ du joueur
+      - sortie/cellule de but
+      - mouvement du clavier
+      - mouvement bloqué à travers les murs
+      - Contrôles aux frontières
+      - détection des gains
+      - redémarrer/redémarrer
+      - plan propre
+      - structure du code lisible
+
+      Caractéristiques optionnelles:
+
+      - minuterie
+      - compteur de mouvement
+      - niveaux multiples
+      - génération aléatoire de labyrinthe
+      - paramètres de difficulté
+      - commandes tactiles
+      - animations
+      - Aperçu du chemin
+      - direction du résolveur le plus court
+
+      La première version devrait se concentrer sur la logique de jeu correcte avant le vernis visuel.
+
+      ## Modèle de données de base
+
+      Le labyrinthe doit être représenté comme des données.
+
+      Un modèle simple:
+
+      ```txt
+      0 = path
+      1 = wall
+      2 = start
+      3 = exit
+      ```
+
+      Exemple :
+
+      ```js
+      const maze = [
+        [1, 1, 1, 1, 1],
+        [1, 2, 0, 0, 1],
+        [1, 1, 1, 0, 1],
+        [1, 0, 0, 3, 1],
+        [1, 1, 1, 1, 1]
+      ];
+      ```
+
+      Cela est important parce que l'assurance-chômage ne devrait pas être la source de la vérité.
+
+      Le labyrinthe existe d'abord sous forme de données structurées. L'écran ne l'affiche que.
+
+      ## Système de coordination
+
+      Une grille a besoin de coordonnées claires.
+
+      Une convention utile :
+
+      ```txt
+      row = y position
+      column = x position
+      ```
+
+      Exemple :
+
+      ```txt
+      maze[row][column]
+      ```
+
+      La position du lecteur peut être stockée comme suit:
+
+      ```js
+      const player = {
+        row: 1,
+        col: 1
+      };
+      ```
+
+      Un bug commun est de mélanger ligne/colonne et x/y.
+
+      Le code devrait utiliser une convention de façon uniforme.
+
+      ## Direction de rendu
+
+      Rendu signifie transformer les données du labyrinthe en éléments visibles.
+
+      Une simple boucle de rendu :
+
+      ```txt
+      clear board
+      for each row:
+        for each cell:
+          create cell element
+          apply class based on cell type
+          if player is here, show player
+      append to board
+      ```
+
+      L'idée clé :
+
+      ```txt
+      state changes first
+      render happens after
+      ```
+
+      Ne laissez pas le DOM devenir le seul état de jeu.
+
+      ## Mouvement des joueurs
+
+      L'entrée du clavier devrait se traduire par une demande de mouvement.
+
+      Exemple :
+
+      ```txt
+      ArrowUp    → row - 1
+      ArrowDown  → row + 1
+      ArrowLeft  → col - 1
+      ArrowRight → col + 1
+      ```
+
+      Le jeu ne devrait pas déplacer le joueur immédiatement sans vérification.
+
+      Débit de mouvement:
+
+      ```txt
+      receive key
+      calculate target cell
+      check boundary
+      check wall
+      if valid, update player position
+      check win condition
+      render
+      ```
+
+      Cela rend le mouvement prévisible.
+
+      ## Manipulation des collisions
+
+      La détection de collision empêche le joueur de se déplacer à travers les murs.
+
+      Un déplacement cible n'est valide que si :
+
+      ```txt
+      target row exists
+      target column exists
+      target cell is not a wall
+      ```
+
+      Logique simplifiée :
+
+      ```txt
+      if target is outside grid:
+          block movement
+
+      if target cell is wall:
+          block movement
+
+      else:
+          move player
+      ```
+
+      La détection des collisions devrait se produire dans la logique du jeu, pas par des tours CSS.
+
+      ## Contrôles des frontières
+
+      Les contrôles des frontières empêchent les erreurs de tableau.
+
+      Un mauvais mouvement peut essayer d'accéder :
+
+      ```txt
+      maze[-1][0]
+      maze[10][0]
+      maze[0][-1]
+      maze[0][10]
+      ```
+
+      Avant de vérifier le type de cellule, le code doit confirmer l'existence de la coordonnée cible.
+
+      Cela empêche les erreurs d'exécution et le comportement de mouvement bizarre.
+
+      ## État de la victoire
+
+      La condition de victoire est généralement:
+
+      ```txt
+      player position == exit position
+      ```
+
+      Lorsque le joueur atteint la sortie, le jeu peut :
+
+      - afficher un message de succès
+      - arrêt du mouvement
+      - nombre de mouvements définitifs record
+      - temps record
+      - active le redémarrage
+      - charger le labyrinthe suivant si des niveaux existent
+
+      L'État gagnant devrait être explicite.
+
+      Exemple :
+
+      ```js
+      let gameWon = false;
+      ```
+
+      Le mouvement peut alors s'arrêter après la victoire :
+
+      ```txt
+      if gameWon:
+          ignore movement
+      ```
+
+      ## Administration publique
+
+      Un jeu simple a encore besoin d'état.
+
+      État utile:
+
+      ```txt
+      maze layout
+      player position
+      start position
+      exit position
+      move count
+      timer
+      game status
+      current level
+      ```
+
+      Une structure propre maintient l'état dans les objets JavaScript au lieu de le diffuser à travers les éléments DOM.
+
+      Exemple :
+
+      ```js
+      const gameState = {
+        maze,
+        player: { row: 1, col: 1 },
+        moves: 0,
+        status: "playing"
+      };
+      ```
+
+      Cela facilite la réinitialisation, le débogage et l'extension du jeu.
+
+      ## Séparer la logique de l'interface utilisateur
+
+      Une mise en œuvre plus forte sépare :
+
+      ```txt
+      game rules
+      rendering
+      input handling
+      ```
+
+      Mauvaise structure:
+
+      ```txt
+      keyboard event directly edits random DOM cells and game state at the same time
+      ```
+
+      Meilleure structure:
+
+      ```txt
+      keyboard event
+        ↓
+      movePlayer(direction)
+        ↓
+      updates state if valid
+        ↓
+      renderGame()
+      ```
+
+      C'est une petite version de l'architecture frontale.
+
+      ## Direction de la production de Maze
+
+      Un labyrinthe peut être codé ou généré.
+
+      Un labyrinthe codé en dur suffit pour une première version.
+
+      La génération du labyrinthe procédural est une extension plus forte.
+
+      Algorithmes de génération possibles:
+
+      - recul récursif
+      - Recherche randomisée en profondeur
+      - Génération de labyrinthe de style Prim
+      - Génération de labyrinthes de style Kruskal
+
+      Un labyrinthe généré devrait garantir:
+
+      ```txt
+      start exists
+      exit exists
+      path from start to exit exists
+      walls are valid
+      grid boundaries are respected
+      ```
+
+      La génération aléatoire n'est utile que si le labyrinthe généré est jouable.
+
+      ## Validation du chemin
+
+      Si des labyrinthes sont générés ou chargés à partir de données, la validation du chemin est importante.
+
+      Le jeu peut utiliser un algorithme de recherche simple pour confirmer la sortie est accessible.
+
+      Algorithmes possibles:
+
+      - largeur-première recherche
+      - profondeur-première recherche
+
+      Question de validation:
+
+      ```txt
+      Can the player reach the exit from the start without crossing walls?
+      ```
+
+      Cela empêche les labyrinthes impossibles.
+
+      ## Déplacer le compteur
+
+      Un compteur de mouvement est une fonctionnalité simple qui ajoute une rétroaction mesurable.
+
+      Règles:
+
+      ```txt
+      increment only on valid movement
+      do not increment when hitting wall
+      stop incrementing after win
+      reset counter on restart
+      ```
+
+      Cela rend la gestion de l'état plus claire.
+
+      ## Direction de la minuterie
+
+      Un minuteur ajoute une autre dimension d'état.
+
+      Règles de minuterie:
+
+      ```txt
+      start on first move or game load
+      stop on win
+      reset on restart
+      do not keep running after victory
+      ```
+
+      Un minuteur est simple visuellement mais facile à implémenter mal si l'état n'est pas clair.
+
+      ## Niveaux multiples
+
+      Plusieurs niveaux peuvent être représentés comme un tableau de labyrinthes.
+
+      Exemple de direction:
+
+      ```js
+      const levels = [maze1, maze2, maze3];
+      ```
+
+      L'état du jeu suit :
+
+      ```txt
+      currentLevelIndex
+      ```
+
+      Quand le joueur gagne :
+
+      ```txt
+      load next level
+      or show completion message
+      ```
+
+      Cela exige que la logique de réinitialisation soit propre.
+
+      Si réinitialiser un labyrinthe est désordonné, plusieurs niveaux l'exposeront.
+
+      ## Disposition sensible
+
+      Une grille de labyrinthe devrait s'adapter à la taille de l'écran.
+
+      Considérations:
+
+      - cellules doivent rester carrées
+      - planche ne doit pas déborder petits écrans
+      - les contrôles doivent rester accessibles
+      - text/status ne doit pas chevaucher le panneau
+      - des commandes tactiles peuvent être nécessaires sur mobile
+
+      CSS Grid est un ajustement naturel pour rendre un labyrinthe.
+
+      Exemple de direction:
+
+      ```css
+      display: grid;
+      grid-template-columns: repeat(columns, cell-size);
+      ```
+
+      Le style exact peut changer, mais la disposition devrait refléter les données de la grille.
+
+      ## Orientation de l'accessibilité
+
+      Un jeu contrôlé par clavier devrait considérer l'accessibilité.
+
+      Bases utiles:
+
+      - mise au point visible
+      - messages d'état lisibles
+      - instructions claires
+      - contraste élevé entre les murs/chemin/joueur/sortie
+      - redémarrer sans souris si possible
+      - éviter de compter uniquement sur la couleur si possible
+
+      Pour un petit projet, même une simple considération d'accessibilité le rend plus professionnel.
+
+      ## Bogues courantes
+
+      ### Le joueur se déplace à travers les murs
+
+      Cause:
+
+      ```txt
+      movement updates position before checking wall
+      ```
+
+      Correction :
+
+      ```txt
+      check target cell first, then update state
+      ```
+
+      ### Jeu Crashes à la frontière
+
+      Cause:
+
+      ```txt
+      code checks maze[row][col] before confirming row/col exists
+      ```
+
+      Correction :
+
+      ```txt
+      perform boundary checks first
+      ```
+
+      ### Desyncs visuels du joueur de l'État
+
+      Cause:
+
+      ```txt
+      DOM is updated but player state is not
+      ```
+
+      Correction :
+
+      ```txt
+      state is source of truth, render after state update
+      ```
+
+      ### Déplacer les augmentations de compteur sur les déplacements bloqués
+
+      Cause:
+
+      ```txt
+      counter increments before validation
+      ```
+
+      Correction :
+
+      ```txt
+      increment only after valid movement
+      ```
+
+      ### Redémarrer ne réinitialise pas tout
+
+      Cause:
+
+      ```txt
+      only player position resets, but timer/moves/status stay old
+      ```
+
+      Correction :
+
+      ```txt
+      centralize resetGame()
+      ```
+
+      ### Impossible Maze généré
+
+      Cause:
+
+      ```txt
+      random walls placed without path validation
+      ```
+
+      Correction :
+
+      ```txt
+      validate path from start to exit
+      ```
+
+      ## Liste de vérification
+
+      ### Rendu
+
+      - la grille apparaît correctement
+      - les murs et les chemins s'affichent correctement
+      - lecteur commence dans la cellule correcte
+      - sortie apparaît dans la cellule correcte
+      - la carte réinitialise correctement
+
+      ### Mouvement
+
+      - monter
+      - descendre
+      - à gauche
+      - à droite
+      - bloqué par des murs
+      - bloqué par les frontières
+      - presses à clés rapides répétées
+      - aucun mouvement après la victoire si prévu
+
+      ### État
+
+      - déplacer les incréments de compte correctement
+      - le nombre de mouvements ne augmente pas sur les déplacements bloqués
+      - redémarrer la position
+      - redémarrer l'état
+      - timer réinitialise si implémenté
+
+      ### État de la victoire
+
+      - victoire des déclencheurs de sortie
+      - message gagnant apparaît
+      - timer s'arrête si implémenté
+      - charge de niveau suivant si implémenté
+      - joueur ne peut pas déclencher l'état de victoire répétée inattendue
+
+      ### Maze des données
+
+      - labyrinthe invalide manipulé
+      - démarrage manquant géré
+      - sortie manquante gérée
+      - le labyrinthe généré est soluble si la génération existe
+      - les tailles de rangée/colonne sont cohérentes
+
+      ## Décisions pratiques
+
+      ### Conserver la grille comme données
+
+      Le DOM devrait afficher le labyrinthe, pas le définir.
+
+      ### Valider avant le déménagement
+
+      Le mouvement ne devrait jamais mettre à jour l'état avant les vérifications de collision.
+
+      ### Modules séparés mentalement
+
+      Même dans un fichier, entrée séparée, logique et rendu.
+
+      ### Commencez par des labyrinthes fixes
+
+      Les labyrinthes à code dur facilitent le débogage de la première version.
+
+      ### Ajouter une génération plus tard
+
+      La génération procédurale est plus forte seulement après que la boucle de jeu de base fonctionne.
+
+      ### Rendre explicite l'état gagnant
+
+      Un jeu doit savoir s'il joue, a gagné ou réinitialisé.
+
+      ### Cellules de bord d'essai
+
+      Les frontières révèlent la plupart des bugs de mouvement.
+
+      ## Ce qu'une version terminée devrait montrer
+
+      Une version terminée forte devrait montrer:
+
+      - labyrinthe stocké sous forme de données structurées
+      - fonction de rendu propre
+      - Gestion des entrées du clavier
+      - validation du mouvement
+      - détection des collisions murales
+      - Contrôles aux frontières
+      - condition de gain
+      - réinitialiser la logique
+      - compteur de mouvement ou minuterie si mis en œuvre
+      - mise en page du réseau sensible
+      - README avec commandes
+      - structure claire du projet
+      - direction optionnelle de la génération/validation du chemin
+
+      ## Preuves à retenir
+
+      Voici quelques éléments de preuve utiles à cette note :
+
+      - capture d'écran de labyrinthe UI
+      - extrait de code pour les données de labyrinthe
+      - fonction de mouvement
+      - Contrôle de collision
+      - fonction rendu
+      - code de condition de gain
+      - réinitialiser le comportement
+      - Capture d'écran de mise en page réactive
+      - exemple de labyrinthe généré si implémenté
+      - Section des contrôles README
+      - avant/après le refacteur montrant la séparation logique
+
+      ## Hypothèses techniques
+
+      Cette note suppose que le projet de labyrinthe est une application interactive basée sur le navigateur.
+
+      Il suppose que JavaScript gère la logique de jeu et le rendu.
+
+      Il suppose également que le projet est destiné à démontrer la logique frontale, la gestion de l'état, et la pensée algorithmique plutôt que le développement de jeux commerciaux.
+
+      ## Principaux risques
+
+      - la présenter comme un petit jeu de jouet
+      - Codage dur dans les DOM
+      - mélanger les mises à jour de l'interface utilisateur et les règles de jeu trop
+      - Faibles contrôles aux frontières
+      - aucune séparation entre l'état et le rendu
+      - les labyrinthes générés impossibles
+      - pas de cohérence de réinitialisation
+      - aucun essai sur les cellules de bord
+      - mauvaise configuration mobile
+      - surbâtir le vernis visuel avant que la logique de jeu fonctionne
+
+      ## État actuel
+
+      Cette note représente un petit projet de frontend interactif recadré autour du comportement du système.
+
+      Ce n'est pas la pièce de portefeuille la plus solide par rapport à l'infrastructure, VPN, ERP ou outil de déploiement.
+
+      Mais il est encore utile parce qu'il montre:
+
+      ```txt
+      state modeling
+      grid logic
+      event handling
+      collision detection
+      rendering
+      algorithm direction
+      ```
+
+      Cela donne à la section Notes une entrée de systèmes frontend/interactive plus légère sans qu'elle ressemble à un remplissage.
+
+      ## Ce que la présente note ne prétend pas
+
+      Cette note ne prétend pas être un jeu commercial.
+
+      Il ne prétend pas les graphismes avancés, la physique, multijoueur, ou l'architecture complète du moteur de jeu.
+
+      Il documente un projet de labyrinthe ciblé utilisé pour pratiquer la logique de frontend interactive et la pensée algorithmique.
+
+      ## À emporter pratique
+
+      La leçon utile est:
+
+      > Un petit jeu devient techniquement utile lorsque le modèle d'état est clair.
+
+      Pour un projet de labyrinthe, les parties importantes sont:
+
+      - représentent le labyrinthe comme données
+      - maintenir la position du joueur dans l'état
+      - valider chaque mouvement
+      - murs de blocs et limites
+      - rendu de l'état
+      - détecter la condition de victoire
+      - Réinitialiser proprement
+      - ajouter la génération seulement après que la boucle de base fonctionne
+
+      Encadré de cette façon, le projet devient une note de système interactive au lieu d'un mini-jeu aléatoire.
 seoTitle: "Building a Grid-Based Interactive System"
 seoDescription: "A practical note about building a grid-based interactive system, covering maze representation, movement, collision handling, rendering, state management, completion conditions, and frontend architecture."
 ---

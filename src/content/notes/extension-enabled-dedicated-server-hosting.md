@@ -18,6 +18,582 @@ date: "2026-07-08"
 updated: "2026-07-25"
 featured: true
 published: true
+translations:
+  fr:
+    title: "Hébergement d’un service dédié avec extensions"
+    category: "Hébergement de services"
+    summary: "Notes sur l’hébergement d’un service dédié extensible sous Linux, couvrant la compatibilité ARM, la configuration des extensions, les journaux et le dépannage."
+    resumeSummary: >-
+      Documenté le déploiement d'un service dédié à l'extension sur Linux, y compris la configuration de
+      lancement, la disposition du système de fichiers, la gestion du service, les journaux, les routines de
+      mise à jour et l'installation d'extension. Le travail de dépannage porte une attention particulière à
+      l'architecture ARM et à la compatibilité avec le temps d'exécution, aux expériences de Docker, aux
+      erreurs de configuration et à la différence entre un processus démarré avec succès et un service
+      utilisable sain.
+    body: |-
+
+      ## Pourquoi cette note existe
+
+      Un service d'état peut être simple quand il fonctionne de base et ne nécessite qu'un petit groupe d'utilisateurs.
+
+      Il devient plus complexe lorsque le serveur utilise ExtensionRuntime, extensions personnalisées, hébergement Linux, matériel ARM, expériences Docker, et idées d'intégration Discord.
+
+      Cette note documente le côté pratique de l'hébergement d'un service dédié avec ExtensionRuntime sur un VPS Linux. L'accent n'est pas seulement démarrer le serveur une fois. L'accent est sur la compréhension des parties mobiles: compatibilité d'architecture, exigences d'exécution, installation d'extension, configuration du serveur, logs, construction d'erreurs, et récupération lorsque le serveur échoue.
+
+      ## Contexte du serveur
+
+      La configuration est basée sur une pile d'applications Linux VPS en cours d'exécution avec ExtensionRuntime.
+
+      L'environnement comprenait:
+
+      - Oracle Cloud ARM / direction VPS de style ampère
+      - Administration du serveur Linux
+      - ExtensionRuntime fichiers
+      - Exigences relatives au temps d'exécution .NET
+      - Bâtiment d'extension/essais
+      - fichier de configuration du serveur
+      - aucune direction de démarrage de l'équipe/serveur
+      - Planification des ponts discordants
+      - direction de développement d'extension personnalisée
+      - dépannage à travers les couches d'architecture, d'exécution et d'extension
+
+      Cette note est écrite comme une note de champ, pas comme un guide universel.
+
+      ## Ce que cette configuration veut prouver
+
+      - Les services dédiés à l'extension nécessitent plus de structure que les serveurs de base
+      - L'architecture CPU est importante lors de l'utilisation d'outils préconstruits ou d'images Docker
+      - ExtensionRuntime ajoute des contraintes de compatibilité d'exécution et d'extension
+      - les fichiers de configuration du serveur doivent être traités comme faisant partie du déploiement
+      - les journaux et les erreurs de construction sont la source réelle de l'information de débogage
+      - les extensions personnalisées devraient être construites et testées dans un chemin contrôlé
+      - le démarrage du service doit être répétable au lieu de se baser sur des commandes mémorisées
+      - les relais de communication externe et les extensions service-comportement ne devraient être ajoutés qu'après la stabilité du service de base
+
+      ## Pioche et outils utilisés
+
+      ### Calque du serveur
+
+      - Linux VPS
+      - Administration de SSH
+      - Environnement serveur ARM/Ampère
+      - gestion du serveur basée sur le système de fichiers
+      - fichiers de configuration du serveur
+      - logs et sortie de crash
+
+      ### pile d'application calque
+
+      - direction du serveur dédié de pile d'application
+      - ExtensionRuntime
+      - fichiers de données de service
+      - configuration du serveur
+      - fichiers d'extension
+      - sources d'extension
+      - construire la sortie
+      - drapeaux de lancement du serveur
+
+      ### Couche d'exécution
+
+      - .NET temps d'exécution
+      - dépendances indigènes
+      - contrôle de compatibilité de l'architecture
+      - Expérimentations Docker là où elles sont utiles
+      - dépannage spécifique à la plate-forme
+
+      ### couche de développement
+
+      - ExtensionArbre de source de runtime
+      - processus de construction d'extension personnalisé
+      - règles de comportement du service côté serveur
+      - direction de dépendance à l'extension
+      - compiler les erreurs et le débogage de l'API
+
+      ### Direction de l'intégration
+
+      - Discord chat bridge planification
+      - direction du relais de réalisation/événement
+      - amélioration de la visibilité de la console
+      - direction de sortie du chat et de l'événement serveur dans l'application
+
+      ## Construction prévue
+
+      La construction prévue est un service dédié qui peut fonctionner de manière fiable avec ExtensionRuntime et des extensions sélectionnées.
+
+      Une configuration terminée devrait permettre :
+
+      - serveur commence par une commande ou un script connu
+      - serveur lit le fichier de configuration prévu
+      - les fichiers de données de service sont stockés dans un endroit connu
+      - les extensions sont installées intentionnellement
+      - des extensions personnalisées peuvent être construites et copiées au bon endroit
+      - les journaux sont disponibles lorsque le démarrage échoue
+      - les problèmes d'architecture/d'exécution sont rapidement identifiés
+      - intégration de relais de communication externe peut être ajouté après la stabilité du service
+      - sauvegardes existent avant les changements de données d'extension ou de service
+
+      ## Présentation du répertoire
+
+      Une mise en page propre facilite la maintenance du serveur.
+
+      Exemple de direction:
+
+      ```txt
+      /home/opc/tml-arm/
+        ExtensionRuntime/
+          ExtensionRuntime.dll
+          serverconfig.txt
+          persistent data/
+          extensions/
+          ExtensionSources/
+            SurfaceProtection/
+      ```
+
+      Le chemin exact peut changer, mais l'idée importante est de garder :
+
+      - ExtensionRuntime fichiers
+      - fichiers de données de service
+      - fichiers d'extension
+      - sources d'extension
+      - fichiers de configuration
+      - construire la sortie
+
+      dans des endroits prévisibles.
+
+      ## Configuration du serveur
+
+      Un fichier de configuration de serveur est mieux qu'une longue commande pleine d'options répétées.
+
+      Exemple de direction:
+
+      ```txt
+      /work/serverconfig.txt
+      ```
+
+      ou:
+
+      ```txt
+      /home/opc/tml-arm/ExtensionRuntime/serverconfig.txt
+      ```
+
+      Un fichier de configuration peut définir :
+
+      - chemin de données de service
+      - utilisateurs max
+      - port
+      - mot de passe
+      - difficulté
+      - motd
+      - banliste
+      - réglage sécurisé
+      - langue
+      - auto-créer la direction des données de service si nécessaire
+
+      Le fichier de configuration doit être suivi dans le cadre de la configuration du serveur.
+
+      ## Direction de lancement
+
+      Le service ExtensionRuntime est généralement lancé via sa DLL avec l'exécution correcte.
+
+      Exemple de forme:
+
+      ```bash
+      dotnet ExtensionRuntime.dll -server -config /path/to/serverconfig.txt
+      ```
+
+      Des drapeaux supplémentaires peuvent être nécessaires selon la configuration.
+
+      Pour la construction d'extension ou la configuration hors ligne, `-nosteam` peut être utile là où l'intégration Steam n'est pas requise.
+
+      La commande de lancement devrait éventuellement être enveloppée dans un script afin que le serveur puisse être lancé de manière cohérente.
+
+      ## Questions liées à la GAR / Architecture
+
+      L'hébergement ARM VPS peut être attrayant en raison de ressources gratuites ou peu coûteuses, mais la compatibilité architecture crée des problèmes réels.
+
+      Types de problèmes courants:
+
+      - `Exec format error`
+      - amd64 Image Docker sur l'hôte ARM
+      - inadéquation de la dépendance native
+      - Problèmes de compatibilité SteamCMD
+      - erreurs de bibliothèque d'exécution
+      - outil attendant x86_64 environnement
+      - l'émulation fonctionne mais est plus lente ou fragile
+
+      Si une image ou un binaire est construit pour amd64 et que l'hôte est ARM, il peut ne pas s'exécuter nativement.
+
+      Ce n'est pas un problème spécifique à la pile d'applications. C'est un problème général d'hébergement/plateforme.
+
+      ## Expériences de Docker
+
+      Docker peut rendre la configuration du serveur plus propre, mais seulement si l'image supporte l'architecture cible.
+
+      Dans ce type de configuration, Docker peut échouer parce que:
+
+      - image est amd64-seulement
+      - hôte est ARM
+      - script d'entrée est le mauvais format
+      - La dépendance de SteamCMD ne correspond pas
+      - la bibliothèque native échoue à l'exécution
+      - les chemins montés sont mauvais
+      - le chemin de configuration du serveur dans le conteneur est incorrect
+
+      Lorsque Docker devient la source du problème, exécuter ExtensionRuntime directement sur l'hôte peut être plus facile pour le dépannage.
+
+      ## Prolongation Problèmes de durée d'exécution
+
+      ExtensionRuntime dépend des composants d'exécution et des bibliothèques natives.
+
+      Types de problèmes courants:
+
+      - manquant .NET runtime
+      - mauvaise version .NET
+      - bibliothèque native manquante
+      - Démarrage du noyau du dump
+      - problème de trajectoire de dépendance
+      - problème d'autorisation
+      - problème de moteur graphique/natif même sur le serveur
+      - drapeaux de lancement manquants ou erronés
+
+      L'habitude importante de débogage est de lire la sortie d'erreur réelle au lieu de changer à plusieurs reprises des parties aléatoires de la configuration.
+
+      ## extension Direction d'installation
+
+      les extensions doivent être ajoutées après que le serveur de base fonctionne.
+
+      Un débit plus sûr:
+
+      1. démarrer le service de base sans extension
+      2. confirmer les charges de données de service
+      3. confirmer le port/connectivité
+      4. ajouter une extension ou un groupe d'extensions connexes
+      5. redémarrer
+      6. lire les journaux
+      7. joindre et tester
+      8. sauvegarde avant les modifications majeures
+
+      L'ajout de nombreuses extensions à la fois rend les échecs plus difficiles à isoler.
+
+      ## Direction du développement de l'extension personnalisée
+
+      Le travail d'extension personnalisé devrait vivre sous `ExtensionSources`.
+
+      Exemple :
+
+      ```txt
+      ExtensionRuntime/ExtensionSources/SurfaceProtection/
+      ```
+
+      La commande build doit pointer vers le bon répertoire ExtensionRuntime et savedirectory.
+
+      Exemple de forme:
+
+      ```bash
+      dotnet ExtensionRuntime.dll -build SurfaceProtection -tmlsavedirectory /home/opc/tml-arm/ExtensionRuntime
+      ```
+
+      La commande exacte dépend de la disposition finale du dossier.
+
+      La partie importante est que les commandes de build doivent être documentées, car les chemins ExtensionRuntime peuvent devenir déroutants rapidement.
+
+      ## Créer des erreurs
+
+      Les erreurs d'extension personnalisée sont des signaux utiles.
+
+      Exemples de catégories d'erreurs:
+
+      - erreur de signature de la méthode
+      - utilisation obsolète de l'API ExtensionRuntime
+      - mauvais type de retour
+      - espace de noms manquant ou classe
+      - confusion API côté serveur/client
+      - mauvaise logique de carrelage ou d'élément
+      - dépendance manquante
+      - construire le chemin mal
+
+      Un type d'exemple réel :
+
+      ```txt
+      return type must be 'void' to match overridden member
+      ```
+
+      Cela signifie que le code d'extension utilise la signature de la mauvaise méthode pour la version ExtensionRuntime.
+
+      La correction n'est pas une édition aléatoire. La correction vérifie la signature de l'API actuelle et la correspond exactement.
+
+      ## Règles à l'aide du serveur
+
+      Une des orientations du projet consistait à établir des règles de comportement côté serveur, comme la protection des zones partagées contre les changements non autorisés tout en préservant les actions autorisées ailleurs.
+
+      Il s'agit d'un cas de développement d'extension utile car il montre qu'un service dédié peut appliquer les règles par le biais du code plutôt que de dépendre uniquement de la modération manuelle.
+
+      Considérations importantes:
+
+      - quels objets devraient être protégés
+      - comment la limite protégée est définie
+      - Quelles actions devraient être autorisées
+      - ce qui devrait se passer quand une action bloquée se produit
+      - comment les messages sont montrés aux utilisateurs
+      - si la règle crée des chemins de duplication
+      - si les objets dépendants et les objets multicellules se comportent correctement
+
+      ## Direction du relais de communication externe
+
+      Un relais de communication externe peut connecter le service à un canal de communication configuré.
+
+      Objectifs possibles:
+
+      - relais en application chat à Discord
+      - relais Discord messages au service chat
+      - afficher les événements de jointure/leave
+      - indiquer le statut ou l'activité de l'événement
+      - améliorer la visibilité à distance dans l'activité du serveur
+      - éviter d'exposer la sortie de console admin
+
+      Cela devrait être ajouté après que le serveur de base et la configuration de l'extension soient stables.
+
+      Un pont qui fuit la sortie de commande ou des erreurs internes peuvent créer des problèmes de bruit ou de confidentialité.
+
+      ## Console et direction du logging
+
+      Un serveur compatible avec l'extension a besoin de bons journaux.
+
+      Zones de log utiles:
+
+      - ExtensionRuntime sortie de démarrage
+      - sortie de construction d'extension
+      - sortie du crash
+      - les messages de chargement de données de service
+      - extension des messages de chargement
+      - sortie d'exception d'exécution
+      - journaux de relais de communication externe s'ils sont utilisés
+
+      La console doit être plus qu'une boîte noire. Si une extension échoue, les journaux doivent indiquer clairement quelle extension ou quel fichier a causé la défaillance.
+
+      ## Direction de sauvegarde
+
+      Les sauvegardes sont importantes parce que les données persistantes et les configurations d'extension sont stateful.
+
+      Cibles minimales de sauvegarde & #160;:
+
+      ```txt
+      persistent data/
+      extensions/
+      ExtensionSources/
+      serverconfig.txt
+      ```
+
+      Avant de modifier les extensions, la logique d'extension personnalisée ou la version ExtensionRuntime, sauvegardez les données de service et config.
+
+      Une simple sauvegarde peut être :
+
+      ```bash
+      tar -czf service-backup-$(date +%F).tar.gz persistent-data extensions serverconfig.txt
+      ```
+
+      Pour le développement personnalisé, sauvegardez ou contrôlez la version de la source d'extension.
+
+      ## Scénarios de déploiement
+
+      Un script start/build est utile car les commandes deviennent longues.
+
+      Actions utiles du script :
+
+      ```txt
+      start
+      stop
+      restart
+      build-extension
+      logs
+      backup
+      update-extensions
+      ```
+
+      Le premier script n'a pas besoin d'être parfait. Il doit seulement réduire les étapes manuelles répétées et empêcher d'oublier des chemins importants.
+
+      ## Décisions pratiques
+
+      ### Stabiliser le serveur de base avant d'ajouter des extensions
+
+      Si le serveur de base ne démarre pas de façon fiable, le débogage de l'extension devient plus difficile.
+
+      ### Traiter l'architecture comme une contrainte de première classe
+
+      Sur les hôtes ARM VPS, chaque image ou outil Docker ne fonctionnera pas.
+
+      Vérifiez l'architecture tôt au lieu de supposer que chaque commande Linux fonctionne de la même façon.
+
+      ### Gardez la logique d'extension personnalisée petite et testable
+
+      De petites règles sont plus faciles à déboguer qu'une large extension qui change de nombreux systèmes à la fois.
+
+      ### Utiliser les journaux avant de deviner
+
+      Les erreurs ExtensionRuntime pointent habituellement vers l'appel, la dépendance ou l'extension de l'API défaillant.
+
+      ### Sauvegarder avant de modifier les extensions
+
+      Les modifications d'extension peuvent casser les données persistantes, les configurations ou le démarrage du serveur.
+
+      ### Ajouter le relais de communication après stabilité du noyau
+
+      Les intégrations ne doivent pas être mélangées à la première phase de débogage.
+
+      ## Points communs de défaillance
+
+      ### Erreur de format Exec
+
+      Cause probable:
+
+      ```txt
+      amd64 binary or container on ARM host
+      ```
+
+      Fixez la direction & #160;:
+
+      - utiliser une image/binaire compatible ARM
+      - construire pour la plate-forme correcte
+      - utiliser l'émulation seulement si elle est acceptable
+      - éviter le chemin Docker jusqu'à ce que le serveur de base fonctionne directement
+
+      ### ExtensionRuntime commence alors Crashes
+
+      Causes probables:
+
+      - temps d'exécution manquant
+      - problème de dépendance native
+      - mauvais drapeaux de lancement
+      - environnement incompatible
+      - extension cassée
+      - mauvais chemin de configuration
+      - problème de charge des données de service
+
+      ### Extension Build Fails
+
+      Causes probables:
+
+      - Inadéquation de l'API
+      - signature de préséance erronée
+      - dépendance manquante
+      - mauvais espace de noms
+      - Code de l'échantillon dépassé
+      - mauvais répertoire de sauvegarde
+      - build des points de commande vers le mauvais dossier
+
+      ### Serveur Exécute mais les utilisateurs ne peuvent pas se connecter
+
+      Causes probables:
+
+      - port fermé
+      - pare-feu fournisseur
+      - pare-feu local
+      - mauvais port en configuration
+      - serveur n'écoutant pas l'adresse prévue
+      - inadéquation de la version
+      - l'inadéquation de l'extension
+
+      ### Protection de surface Logic Creates Exploits
+
+      Causes probables:
+
+      - bloquer l'interaction d'un objet mais pas les gouttes associées
+      - permettant à un changement d'objet de base d'affecter des objets dépendants
+      - ne pas gérer les relations d'attachement
+      - ne pas distinguer les objets exemptés des objets protégés
+      - inadéquation des prévisions serveur/client
+
+      ## Ce qu'une configuration terminée devrait montrer
+
+      Une configuration solide devrait montrer:
+
+      - ExtensionRuntime démarre de manière fiable
+      - le chemin de fichier de configuration est documenté
+      - les fichiers de données de service sont stockés de façon prévisible
+      - les extensions sont installées intentionnellement
+      - extension personnalisée construit avec succès
+      - port serveur est documenté et accessible
+      - les journaux de démarrage et de crash sont accessibles
+      - processus de sauvegarde existe
+      - la direction du relais de communication externe est claire
+      - les limitations de l'architecture sont enregistrées
+      - les commandes update/build/start sont documentées
+
+      ## Preuves à retenir
+
+      Voici quelques éléments de preuve utiles à cette note :
+
+      - arborescence du répertoire du serveur
+      - commande de démarrage
+      - extrait de fichier serveurconfig
+      - journal de démarrage d'ExtensionRuntime réussi
+      - liste des extensions
+      - arbre source d'extension personnalisé
+      - build commande output
+      - construire des erreurs et corriger des exemples
+      - configuration port/pare-feu
+      - test de connexion utilisateur
+      - essai de relais de communication externe s'il est ajouté
+      - sauvegarde de la liste des archives
+      - l'architecture vérifie les sorties telles que `uname -m`
+
+      ## Hypothèses techniques
+
+      Cette configuration suppose que l'hôte est un VPS Linux et peut être basé sur ARM.
+
+      Il suppose qu'ExtensionRuntime et ses dépendances peuvent fonctionner dans l'environnement choisi après la résolution des problèmes de compatibilité.
+
+      Il suppose également que le serveur est destiné à une petite communauté ou à un groupe contrôlé, et non à un vaste environnement de production publique.
+
+      ## Principaux risques
+
+      - inadéquation de l'architecture entre hôte et binaires
+      - en s'appuyant sur des images Docker qui ne prennent pas en charge ARM
+      - Dépendances de runtime
+      - incompatibilité de l'extension
+      - corruption de données de service après les changements d'extension
+      - sauvegardes manquantes
+      - bogues d'extension personnalisés créant des exploits
+      - chemins de configuration peu clairs
+      - relais de communication externe fuite sortie indésirable
+      - règles port/firewall ne correspondant pas à la configuration du serveur
+      - commandes manuelles oubliées ou modifiées au fil du temps
+
+      ## État actuel
+
+      Cette note représente la direction pratique d'hébergement et de dépannage pour un service dédié avec ExtensionRuntime sur Linux.
+
+      La valeur principale est le modèle opérationnel : stabiliser le serveur de base, comprendre les contraintes d'architecture, gérer soigneusement les extensions, construire une logique personnalisée dans un chemin connu, capturer des journaux et documenter des commandes répétables.
+
+      La configuration crée également une base pour une note séparée sur la construction d'une extension de protection de surface de pile d'application personnalisée.
+
+      ## Ce que la présente note ne prétend pas
+
+      La présente note ne prétend pas être un guide complet universel ExtensionRuntime.
+
+      Il ne prétend pas que l'hébergement ARM VPS est toujours le choix le plus facile.
+
+      Elle ne prétend pas que chaque prolongement ou pont fonctionnera sans vérification de compatibilité.
+
+      C'est une note de champ sur l'hébergement, le débogage et le maintien d'un service dédié à l'extension dans un environnement Linux réel.
+
+      ## À emporter pratique
+
+      Un service dédié ExtensionRuntime n'est pas seulement l'exécutable serveur.
+
+      La configuration utile comprend:
+
+      - temps d'exécution correct
+      - l'architecture correcte
+      - chemins de configuration connus
+      - changements prudents dans l'extension
+      - processus de construction d'extension personnalisé
+      - journaux
+      - sauvegardes
+      - lancer des scripts
+      - essai au port
+      - frontières de l'intégration
+
+      C'est ce qui rend le serveur durable après le premier lancement réussi.
 seoTitle: "Operating an Extension-Enabled Linux Service"
 seoDescription: "A practical note about hosting an extension-enabled stateful service on Linux, covering ARM VPS compatibility, extension setup, configuration, logs, and troubleshooting."
 ---

@@ -21,6 +21,627 @@ date: "2026-07-08"
 updated: "2026-07-25"
 featured: true
 published: true
+translations:
+  fr:
+    title: "Hébergement d’un service dédié sur réseau isolé"
+    category: "Hébergement de services"
+    summary: "Notes sur l’hébergement à domicile d’un service dédié derrière un VLAN isolé, avec OpenWrt, commutateur administrable, Proxmox, redirection de port et sauvegardes."
+    resumeSummary: >-
+      L'architecture utilise le routage OpenWrt, le marquage VLAN géré, la configuration routeur-on-a-stick,
+      les zones pare-feu et un hôte Proxmox pour définir les limites physiques et logiques entre les services,
+      l'administration et les appareils de confiance. La note traite de l'exposition au port, des règles de
+      circulation et du placement de l'hôte, montrant comment la segmentation limite l'effet d'une charge de
+      travail compromise ou instable du public sans rendre l'environnement impossible à exploiter.
+    body: |-
+
+      ## Pourquoi cette note existe
+
+      C'était le seul service dédié que j'ai hébergé de chez moi au lieu d'un VPS.
+
+      La partie importante n'était pas seulement qu'un service dédié était en cours d'exécution. La partie utile était la conception du réseau autour de lui: le serveur vivait derrière un VLAN isolé homelab/serveur, hébergé du côté Proxmox, tandis que le réseau domestique normal restait séparé.
+
+      La configuration a utilisé un Raspberry Pi 5 en cours d'exécution OpenWrt comme routeur, avec un interrupteur TP-Link TL-SG105E géré étiquetant VLAN.
+
+      Cela a rendu le projet plus qu'un service dédié. Il est devenu une configuration pratique d'infrastructure domiciliaire impliquant le réseau routeur-on-a-stick, la séparation VLAN, l'hébergement Proxmox, les règles de pare-feu, l'acheminement de port, et la persistance des données.
+
+      ## Contexte du serveur
+
+      Le service dédié a été hébergé à la maison.
+
+      L'environnement comprenait:
+
+      - connexion internet à domicile
+      - Raspberry Pi 5 fonctionne OpenWrt comme routeur principal
+      - Routeur mono-Ethernet-on-a-stick
+      - Commutateur géré TP-Link TL-SG105E
+      - Signalisation VLAN sur l'interrupteur
+      - Accueil VLAN 10
+      - Homelab/Serveur VLAN 20
+      - Serveur Proxmox connecté au serveur isolé VLAN
+      - service dédié à partir de l'environnement Proxmox
+      - Transfert de port UDP pour la pile d'application
+      - séparation du pare-feu entre les appareils domestiques et les appareils serveurs
+      - persistance des données et sauvegardes
+
+      Cette configuration est distincte des derniers services hébergés par VPS. Elle fait partie de l'infrastructure domestique et du côté homelab du travail.
+
+      ## Ce que cette configuration veut prouver
+
+      - un réseau domestique peut accueillir un service public sans rester à l'appartement
+      - Le marquage VLAN sur un petit commutateur géré est utile même dans une configuration à domicile
+      - un Raspberry Pi 5 avec OpenWrt peut agir comme le point de contrôle routeur/firewall
+      - Proxmox peut fournir la couche de calcul pour les petits services auto-organisés
+      - un serveur VLAN réduit l'exposition aux appareils domestiques normaux
+      - port transiting devrait exposer seulement les ports de service requis
+      - les règles de pare-feu devraient définir ce que le serveur VLAN peut et ne peut pas atteindre
+      - les fichiers de données de service ont besoin de sauvegardes parce que le service dédié est état
+      - l'hébergement à domicile nécessite plus de réflexion réseau que l'hébergement VPS
+
+      ## Pioche et outils utilisés
+
+      ### Routeur et calque réseau
+
+      - Framboise Pi 5
+      - Ouvrir
+      - réseau routeur-on-a-stick
+      - Interfaces VLAN
+      - Zones pare-feu
+      - DHCP
+      - transport de port
+      - Pays
+      - Commutateur géré TP-Link TL-SG105E
+      - Signalisation VLAN et ports d'accès non étiquetés
+
+      ### Mise en page du VLAN
+
+      - Accueil VLAN 10
+      - Homelab/Serveur VLAN 20
+      - Page d'accueil direction du sous-réseau: `192.168.10.0/24`
+      - Sous-réseau serveur/homelab direction: `192.168.20.0/24`
+      - malle étiqueté entre routeur OpenWrt et commutateur TP-Link
+      - port d'accès non étiqueté pour la maison / côté PA
+      - port d'accès non étiqueté pour Proxmox / côté serveur
+
+      ### Couche de virtualisation
+
+      - Serveur Proxmox
+      - VM / direction d'accueil du conteneur
+      - serveur attaché au VLAN homelab/serveur
+      - stockage persistant des données de service
+      - gestion de console ou SSH
+
+      ### pile d'application calque
+
+      - service dédié
+      - Environnement du serveur Linux
+      - direction du script de démarrage
+      - fichiers de données de service
+      - nom de service, ensemble de données et configuration de contrôle d'accès
+      - Ports UDP `2456-2458`
+
+      ### Couche de maintenance
+
+      - journaux
+      - sauvegardes
+      - redémarrer le workflow
+      - Mettre à jour le flux de travail
+      - test de connexion externe
+
+      ## Construction prévue
+
+      La construction prévue était un service dédié hébergé à domicile qui restait isolé du réseau local principal.
+
+      Une configuration terminée devrait permettre :
+
+      - Appareils domestiques normaux pour rester sur VLAN 10
+      - appareils homelab/serveur pour rester sur VLAN 20
+      - Proxmox hébergera le service dédié depuis le serveur VLAN
+      - OpenWrt sur route et pare-feu entre VLANs
+      - le changement TP-Link pour le trafic VLAN tag/untag correctement
+      - Uniquement les ports UDP à transférer depuis WAN
+      - le serveur VLAN à bloquer d'accéder librement au VLAN d'origine
+      - accès admin au serveur pour rester contrôlé
+      - fichiers de données de service à persister et être sauvegardé
+
+      ## Topologie physique et logique
+
+      La topologie pratique ressemblait à ceci :
+
+      ```txt
+      Internet
+        ↓
+      ISP device / bridge path
+        ↓
+      Raspberry Pi 5 running OpenWrt
+        ↓ tagged trunk
+      TP-Link TL-SG105E managed switch
+        ├─ Home VLAN 10 → AP / normal home devices
+        └─ Server VLAN 20 → Proxmox server → dedicated service
+      ```
+
+      Le Raspberry Pi a géré les décisions de routage et de pare-feu.
+
+      Le TP-Link TL-SG105E a géré le marquage VLAN et la séparation d'accès-port.
+
+      Le serveur Proxmox vivait du côté du serveur/homelab isolé.
+
+      ## Conception VLAN
+
+      La séparation clé était :
+
+      ```txt
+      VLAN 10 → Home network
+      VLAN 20 → Homelab / server network
+      ```
+
+      Exemple de direction du sous-réseau :
+
+      ```txt
+      VLAN 10 Home:          192.168.10.0/24
+      VLAN 20 Homelab/Server: 192.168.20.0/24
+      ```
+
+      Le service dédié appartenait à VLAN 20, et non à la maison normale VLAN.
+
+      Cela importe parce qu'un service public ne devrait pas s'asseoir occasionnellement à côté d'appareils personnels sur le même réseau plat.
+
+      ## Signalisation VLAN TP-Link TL-SG105E
+
+      Le TP-Link TL-SG105E est le petit commutateur géré qui a rendu possible la division VLAN.
+
+      Le rôle de changement général:
+
+      - un port fonctionne comme un coffre étiqueté vers le routeur OpenWrt
+      - un ou plusieurs ports agissent comme des ports d'accès VLAN 10
+      - un ou plusieurs ports agissent comme des ports d'accès Homelab/Server VLAN 20 non identifiés
+      - Les PVID décident à quel trafic non identifié VLAN appartient
+
+      Exemple de direction:
+
+      ```txt
+      Port to OpenWrt/Raspberry Pi: tagged VLAN 10 + VLAN 20
+      Port to AP/Home side:         untagged VLAN 10, PVID 10
+      Port to Proxmox/server side:  untagged VLAN 20, PVID 20
+      ```
+
+      Les numéros de port exacts peuvent changer, mais le rôle de chaque port doit être clair.
+
+      L'interrupteur n'est pas seulement un diviseur Ethernet stupide ici. Il fait partie de la conception du réseau.
+
+      ## Rôle du routeur ouvert sur un emplacement
+
+      Le Raspberry Pi 5 utilisait OpenWrt comme point de contrôle routeur/firewall.
+
+      Parce que le Pi a une interface Ethernet unique, la configuration suit une conception de style routeur-on-a-stick:
+
+      ```txt
+      eth0 tagged trunk
+        ├─ VLAN 10 interface
+        └─ VLAN 20 interface
+      ```
+
+      OpenWrt crée ensuite des interfaces logiques distinctes pour chaque VLAN.
+
+      Exemple de direction:
+
+      ```txt
+      Home interface:    br-lan.10 or eth0.10 → 192.168.10.1/24
+      Homelab interface: br-lan.20 or eth0.20 → 192.168.20.1/24
+      ```
+
+      Le nom exact du périphérique dépend de la version OpenWrt et de la configuration du pont, mais le concept est le même.
+
+      OpenWrt possède :
+
+      - routage entre VLANs
+      - DHCP par VLAN
+      - Direction DNS
+      - Zones pare-feu
+      - NAT vers WAN
+      - transfert de port de WAN vers le serveur VLAN
+
+      ## Conception du pare-feu
+
+      Le pare-feu rend la séparation VLAN significative.
+
+      Une politique pratique:
+
+      ### Accueil VLAN 10
+
+      Les appareils domestiques peuvent accéder à Internet.
+
+      Les appareils Home/Admin peuvent être autorisés à accéder aux services VLAN du serveur sélectionné pour la gestion.
+
+      ### Serveur VLAN 20
+
+      Les serveurs peuvent accéder à Internet pour des mises à jour.
+
+      Les périphériques serveur ne devraient pas lancer librement des connexions dans le VLAN Home.
+
+      ### WAN vers le serveur VLAN
+
+      WAN ne devrait atteindre le service dédié que par l'intermédiaire des ports UDP requis.
+
+      Pour la pile d'application:
+
+      ```txt
+      UDP 2456-2458 → dedicated service IP on VLAN 20
+      ```
+
+      ### WAN aux services administratifs
+
+      Ne pas exposer:
+
+      - Interface web Proxmox
+      - LuCI ouvert
+      - SSH
+      - tableaux de bord internes
+      - autres services de labo
+
+      Les ports de service dédiés sont la seule exposition publique prévue.
+
+      ## Rôle de Proxmox
+
+      Proxmox a fourni la couche de calcul.
+
+      Le service dédié s'est déroulé à partir de l'environnement Proxmox, soit comme une direction de service de type VM ou conteneur.
+
+      Les principales responsabilités de Proxmox étaient les suivantes :
+
+      - attacher le serveur invité au réseau VLAN/serveur correct
+      - fournir CPU/RAM/stockage
+      - garder les fichiers de données de service persistante
+      - permettre l'accès console/SSH pour la gestion
+      - séparer le service des appareils personnels
+      - faciliter la reconstruction ou le déplacement du service plus tard
+
+      L'hôte Proxmox lui-même ne devrait pas être exposé à Internet.
+
+      ## applications empiler Ports serveurs
+
+      pile d'application utilise des ports UDP.
+
+      La direction du port exposé:
+
+      ```txt
+      2456-2458 UDP
+      ```
+
+      La voie à suivre devrait être:
+
+      ```txt
+      WAN UDP 2456-2458
+        → OpenWrt firewall/NAT
+        → dedicated service IP on VLAN 20
+      ```
+
+      Si les utilisateurs ne peuvent pas se connecter, les premiers contrôles doivent être :
+
+      - Le service dédié fonctionne-t-il?
+      - Le serveur écoute-t-il le port attendu ?
+      - OpenWrt achemine UDP, pas TCP ?
+      - est-ce que le point vers le serveur VLAN 20 actuel ?
+      - Le pare-feu permet-il le WAN à cette destination?
+      - Le chemin IP public/FAI est-il accessible?
+
+      ## Pourquoi l'isolement VLAN compte ici
+
+      Le service dédié est public. Même si le service dédié lui-même est normal, il reçoit du trafic de l'extérieur du réseau domestique.
+
+      Cela lui donne un niveau de confiance différent de:
+
+      - PC personnels
+      - téléphones
+      - Dispositifs AP/home
+      - pages d'administration du routeur
+      - tableaux de bord privés
+
+      Le serveur VLAN limite ce qui se passe si le service, l'invité ou la configuration a un problème.
+
+      Il ne rend pas la configuration magiquement sécurisée, mais il réduit la confiance inutile entre les appareils.
+
+      ## Configuration du serveur
+
+      Un service dédié nécessite normalement:
+
+      ```txt
+      server name
+      data set name
+      password
+      port
+      public/private listing setting
+      data path
+      ```
+
+      Le mot de passe ne doit pas être affiché dans les captures d'écran publiques ou engagé dans un dépôt.
+
+      La commande de démarrage doit être enveloppée dans un script, par exemple :
+
+      ```txt
+      start_dedicated-service.sh
+      ```
+
+      Le script rend le redémarrage/mise à jour plus cohérent.
+
+      ## Données persistantes
+
+      Les fichiers de données de service sont la partie la plus importante du service.
+
+      L'installation du serveur peut être recréée. Les données de service ne doivent pas être perdues occasionnellement.
+
+      Pratiques importantes:
+
+      - savoir où les fichiers de données de service sont stockés
+      - garder le chemin de sauvegarde persistant à l'intérieur de l'invité Proxmox
+      - éviter les chemins de conteneurs temporaires pour les données de service
+      - sauvegarder les données de service avant les mises à jour
+      - sauvegarder avant de modifier le stockage VM/conteneur
+      - conserver au moins une sauvegarde en dehors du répertoire du serveur actif
+
+      ## Direction de sauvegarde
+
+      Cibles minimales de sauvegarde & #160;:
+
+      ```txt
+      application stack service data files
+      startup script
+      service file if used
+      configuration notes
+      ```
+
+      Exemple de direction de sauvegarde :
+
+      ```bash
+      tar -czf dedicated-service-backup-$(date +%F).tar.gz /path/to/dedicated-service/service-data
+      ```
+
+      Pour une configuration Proxmox hébergée à domicile, les sauvegardes ne devraient pas exister seulement à l'intérieur du même client. Une copie à l'extérieur du VM/container est plus sûre.
+
+      ## Mettre à jour le flux de travail
+
+      Un flux de mise à jour sûr:
+
+      1. informer les utilisateurs si nécessaire
+      2. arrêter le service dédié
+      3. sauvegarder les fichiers de données de service
+      4. mettre à jour les fichiers du serveur
+      5. Démarrer le serveur
+      6. vérifier les journaux
+      7. test de l'extérieur du réseau domestique
+      8. garder la sauvegarde
+
+      Pour cette configuration, vérifiez également :
+
+      - L'IP invité de Proxmox n'a pas changé
+      - L'affectation de VLAN n'a pas changé
+      - OpenWrt port vers l'avant indique toujours l'IP correcte
+      - L'adhésion au port de commutation de TP-Link correspond toujours au VLAN prévu
+
+      ## Essais externes d'accès
+
+      Les tests effectués à l'intérieur du réseau domestique ne suffisent pas.
+
+      Bons tests :
+
+      - essai à partir de données mobiles
+      - demander à un utilisateur distant de se connecter
+      - vérifier l'emplacement des points IP/domaine public
+      - confirmer l'acheminement du port OpenWrt
+      - vérifier les journaux de la pile d'application après la tentative de connexion
+
+      Les tests LAN peuvent masquer des problèmes NAT, pare-feu, CGNAT ou de renvoi.
+
+      ## Décisions pratiques
+
+      ### Gardez le service dédié hors de la maison VLAN
+
+      Le serveur a été exposé au trafic extérieur, donc il appartenait à la maison/serveur VLAN, pas à la maison VLAN.
+
+      ### Utiliser le TL-SG105E pour les ports d'accès VLAN
+
+      Le commutateur géré a rendu un seul coffre OpenWrt utilisable pour plusieurs réseaux séparés.
+
+      ### Laissez OpenWrt appliquer les règles
+
+      Le commutateur sépare le trafic à la couche 2, mais OpenWrt décide du routage et du comportement du pare-feu entre les VLAN.
+
+      ### Exposez seulement les ports UDP
+
+      Aucun Proxmox, SSH, LuCI, tableaux de bord ou panneaux de gestion ne devraient être publics.
+
+      ### Conserver les sauvegardes de données de service séparément du serveur install
+
+      Les données de service sont l'état réel. L'installation peut être reconstruite.
+
+      ### Documenter les rôles des ports
+
+      Avec un petit commutateur géré, il est facile d'oublier quel port physique est le tronc, la maison ou le serveur.
+
+      Les rôles portuaires devraient être notés.
+
+      ## Points communs de défaillance
+
+      ### VLAN Marquage incorrect sur le commutateur
+
+      Symptômes:
+
+      - Proxmox/serveur n'a pas d'IP
+      - Les appareils domestiques atterrissent sur le mauvais sous-net
+      - serveur ne peut pas atteindre routeur
+      - points de port vers l'avant correctement mais le trafic n'arrive jamais au serveur
+
+      Causes probables:
+
+      - mauvaise inscription/adhésion non autorisée
+      - mauvaise PVID
+      - Port du coffre OpenWrt non étiqueté pour VLAN 20
+      - Port Proxmox/serveur non démarqué VLAN 20
+      - AP/home port accidentellement placé dans le serveur VLAN
+
+      ### Interface VLAN ouverte incorrecte
+
+      Symptômes:
+
+      - VLAN existe sur interrupteur mais pas routé
+      - DHCP manquant sur un VLAN
+      - zone de pare-feu manquante
+      - serveur VLAN n'a pas d'internet
+      - les règles inter-VLAN se comportent mal
+
+      Causes probables:
+
+      - mauvais périphérique d'interface
+      - mauvaise configuration de filtrage VLAN de pont
+      - DHCP non activé pour VLAN 20
+      - zone de pare-feu non assignée
+      - NAT/transfert non autorisé au besoin
+
+      ### utilisateurs ne peuvent pas se connecter de l'extérieur
+
+      Causes probables:
+
+      - ports UDP non transmis
+      - TCP transmis par erreur au lieu de UDP
+      - transmettre les points à l'ancienne IP du serveur
+      - serveur est sur le mauvais VLAN
+      - blocs de pare-feu WAN vers VLAN 20
+      - ISP/question de propriété intellectuelle publique
+      - CGNAT
+      - service dédié non opérationnel
+      - IP/domaine public modifié
+
+      ### Serveur fonctionne localement mais pas à distance
+
+      Causes probables:
+
+      - LAN test contourne le chemin WAN
+      - confusion de réflexion NAT
+      - pare-feu permet LAN mais pas WAN
+      - ISP/routeur en amont
+      - mauvaise méthode d'essai externe
+      - UDP bloqué
+
+      ### Réseau invité Proxmox mal configuré
+
+      Causes probables:
+
+      - invité attaché au mauvais pont
+      - Inadéquation de la balise VLAN
+      - IP invité sur le mauvais sous-net
+      - conflits IP statiques
+      - Pont hôte Proxmox non connecté au port de commutation correct
+      - Interrupteur du port PVID
+
+      ### Données de service semble réinitialiser
+
+      Causes probables:
+
+      - mauvais nom du jeu de données
+      - mauvais chemin de sauvegarde
+      - Stockage non persistant
+      - changement du chemin invité/conteneur
+      - serveur commencé avec une nouvelle donnée de service vide
+      - sauvegarde restaurée à un mauvais emplacement
+
+      ## Ce qu'une configuration terminée devrait montrer
+
+      Une configuration solide devrait montrer:
+
+      - Raspberry Pi 5 fonctionne OpenWrt comme routeur/pare-feu
+      - TL-SG105E pour la manipulation du marquage VLAN
+      - étiqueté coffre d'OpenWrt au commutateur
+      - Accueil VLAN 10 séparé du serveur VLAN 20
+      - Proxmox connecté au serveur/homelab VLAN
+      - service dédié fonctionnant du côté Proxmox
+      - UDP `2456-2458` transmis uniquement au service dédié
+      - serveur VLAN bloqué d'accéder librement à la maison VLAN
+      - accès administrateur contrôlé à partir de périphériques de confiance
+      - chemin de données de service documenté
+      - sauvegardes disponibles
+      - connection externe testée
+      - aucune exposition publique aux services Proxmox/OpenWrt/admin
+
+      ## Preuves à retenir
+
+      Voici quelques éléments de preuve utiles à cette note :
+
+      - diagramme de réseau
+      - Capture d'écran de l'interface VLAN OpenWrt
+      - Capture d'écran de la zone de pare-feu OpenWrt
+      - Capture d'écran de transfert de port OpenWrt
+      - TP-Link TL-SG105E 802.1Q Tableau VLAN
+      - TP-Link TL-SG105E Tableau PVID
+      - Capture d'écran du pont réseau Proxmox
+      - IP invité sur VLAN 20
+      - script de démarrage de la pile d'application
+      - journaux de pile d'application
+      - liste des dossiers de données de service
+      - liste des archives de sauvegarde
+      - Essai de raccordement externe
+
+      ## Hypothèses techniques
+
+      Cette configuration suppose que la connexion à la maison supporte l'accès à l'entrée ou a un chemin de transfert de port utilisable.
+
+      Il suppose que le TP-Link TL-SG105E est configuré avec un abonnement VLAN correctement étiqueté et non étiqueté.
+
+      Il suppose qu'OpenWrt possède le routage et le pare-feu entre VLANs.
+
+      Il suppose que la pile d'applications Proxmox est placée sur VLAN 20 ou le réseau de serveurs prévu.
+
+      Il suppose également que les fichiers de données de service sont stockés de façon persistante et sauvegardés avant les changements risqués.
+
+      ## Principaux risques
+
+      - mauvais commutateur PVID dispositifs de placement dans le mauvais VLAN
+      - Système ouvert malle manquant VLAN 20 marquage
+      - exposer la gestion de Proxmox par erreur
+      - transitant trop de ports
+      - permettant le serveur VLAN dans le VLAN d'origine trop largement
+      - IP du serveur interne changer et casser l'avant
+      - perte de données de service à partir d'un chemin de sauvegarde peu clair
+      - pas de sauvegarde avant les mises à jour
+      - Comportement CGNAT ou ISP empêchant l'hébergement entrant
+      - test uniquement à partir de LAN et en supposant que les travaux de WAN
+      - perdre la trace des rôles de port de commutation physique
+
+      ## État actuel
+
+      Cette note représente la direction de configuration de la pile d'application hébergée.
+
+      Contrairement aux services hébergés par VPS, cette configuration appartient au côté infrastructure domestique : routage Raspberry Pi 5 OpenWrt, marquage VLAN TL-SG105E, hébergement Proxmox, serveur isolé VLAN, renvoi de port et conception de pare-feu.
+
+      La valeur principale est que le serveur n'a pas été traité comme un processus aléatoire sur le réseau d'accueil. Il a été hébergé derrière un chemin réseau séparé avec une exposition contrôlée.
+
+      ## Ce que la présente note ne prétend pas
+
+      La présente note ne prétend pas que chaque service dédié devrait être hébergé à domicile.
+
+      Elle ne prétend pas que les VLAN soient nécessaires pour chaque petit serveur.
+
+      Il ne prétend pas qu'une configuration à domicile est automatiquement plus sûre qu'un VPS.
+
+      Il documente une configuration pratique spécifique: un service dédié hébergé à la maison derrière un réseau Proxmox isolé VLAN utilisant OpenWrt et un commutateur géré TP-Link TL-SG105E.
+
+      ## À emporter pratique
+
+      Ce projet a été utile parce qu'il a combiné l'hébergement de service avec la conception de réseau réel.
+
+      Les éléments importants étaient les suivants:
+
+      - Raspberry Pi 5 en cours d'exécution OpenWrt
+      - routeur-on-a-stick itinéraire VLAN
+      - Marquage VLAN TP-Link TL-SG105E
+      - Accueil VLAN 10
+      - Homelab/Serveur VLAN 20
+      - Proxmox comme hôte serveur
+      - pile d'application UDP `2456-2458`
+      - Séparation du pare-feu
+      - stockage persistant des données
+      - sauvegardes
+      - test d'accès externe
+
+      Cela en fait une note d'infrastructure de homelab, pas seulement une note de service dédiée.
 seoTitle: "Isolated Dedicated-Server Hosting Behind a VLAN"
 seoDescription: "A practical note about hosting a dedicated service at home through a VLAN-isolated Proxmox setup using OpenWrt, router-on-a-stick networking, managed-switch tagging, port forwarding, and backups."
 ---

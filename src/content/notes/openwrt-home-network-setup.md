@@ -19,6 +19,522 @@ date: "2026-07-06"
 updated: "2026-07-25"
 featured: true
 published: true
+translations:
+  fr:
+    title: "Mise en place d’un réseau domestique OpenWrt"
+    category: "Réseau"
+    summary: "Notes de terrain sur la construction et le dépannage d’un réseau OpenWrt avec routage, DNS, VPN, planification VLAN et hébergement de petits services."
+    resumeSummary: >-
+      Construit et documenté un réseau d'accueil basé sur OpenWrt qui combine routage, responsabilités DHCP et
+      DNS, filtrage, accès VPN à distance, planification VLAN, et dépannage de service. La conception rend le
+      rôle de chaque composant réseau explicite, puis vérifie l'adressage client, les chemins de résolution,
+      la politique de pare-feu, et la portée du service couche par couche. Il s'agit d'une base
+      d'infrastructure de petite taille qui peut être maintenue : suffisamment personnalisée pour supporter
+      les services séparés et l'administration à distance, mais suffisamment documentée pour récupérer à
+      partir d'une route cassée, d'un chemin DNS ou d'un changement de configuration.
+    body: |-
+
+      ## Pourquoi cette note existe
+
+      Un réseau domestique peut rester simple lorsqu'il n'a besoin que d'un accès Wi-Fi et Internet.
+
+      Il devient plus intéressant lorsque le routeur devient aussi le point de contrôle pour le filtrage DNS, l'accès VPN, les services locaux, la séparation du trafic, le transfert de port et la maintenance à distance.
+
+      Cette note documente la direction d'une configuration de réseau domiciliaire basée sur OpenWrt. L'objectif n'est pas de montrer qu'OpenWrt a été installé. L'objectif est d'expliquer comment le réseau a été traité comme un petit système avec routage, services, accès, points de défaillance et chemins de récupération.
+
+      ## Contexte du réseau
+
+      La configuration est basée sur un routeur OpenWrt utilisé comme principal périphérique réseau contrôlable.
+
+      L'environnement comprend:
+
+      - connexion internet fibre
+      - Situation du routeur/ONT du FSI
+      - Routeur ouvert
+      - direction du commutateur gérée
+      - services locaux
+      - Filtre DNS
+      - Accès à distance VPN
+      - transfert de port au besoin
+      - expansion du stockage pour les services locaux
+      - dépannage à travers les couches DNS, firewall et service
+
+      La configuration a changé avec le temps, ce qui est normal pour un réseau home/lab. La partie importante est de garder le réseau compréhensible tout en ajoutant des capacités.
+
+      ## Ce que cette configuration veut prouver
+
+      - un réseau domestique peut être traité comme un petit système d'infrastructure
+      - OpenWrt donne plus de contrôle qu'un routeur ISP normal
+      - DNS, pare-feu, VPN et services locaux devraient être planifiés ensemble
+      - dépannage doit suivre les calques: périphérique, lien, IP, DNS, pare-feu, service
+      - ajouter des services au routeur augmente la responsabilité et l'impact de défaillance
+      - de petits changements de réseau devraient être documentés parce qu'ils affectent le débogage futur
+      - un routeur peut être utile comme plate-forme d'apprentissage sans transformer le réseau en chaos
+
+      ## Matériel et outils utilisés
+
+      Le matériel exact peut changer, mais cette configuration a impliqué ou considéré:
+
+      ### Matériel réseau
+
+      - Appareil de routeur OpenWrt
+      - Routeur de fibres ISP/chemin ONT
+      - commutateur Ethernet géré
+      - appareils clients locaux
+      - appareils de service optionnels ou mini serveurs
+
+      ### Fonctions OpenWrt
+
+      - configuration de l'interface
+      - Zones pare-feu
+      - DHCP
+      - Transmission DNS
+      - transport de port
+      - gestion des paquets
+      - gestion des services
+      - stockage/extension de recouvrement
+      - Interface web LuCI
+      - Administration de SSH
+
+      ### Services locaux
+
+      - Filtrage DNS chez AdGuard
+      - Serveur VPN WireGuard
+      - Direction du DDNS
+      - petits services autonomes
+      - scripts de maintenance
+
+      ### Outils de dépannage
+
+      - SSH
+      - LuCI
+      - `ip`
+      - `logread`
+      - `netstat` / `ss`
+      - `nslookup`
+      - `ping`
+      - `traceroute`
+      - `nmap`
+      - registres des services
+
+      ## Construction prévue
+
+      La construction prévue est un réseau domestique où le routeur ne passe pas seulement le trafic Internet.
+
+      Il devrait prévoir:
+
+      - routage Internet fiable
+      - comportement local DHCP/DNS
+      - Filtre DNS
+      - accès à distance contrôlé via VPN
+      - règles de pare-feu compréhensibles
+      - accès au service seulement lorsque nécessaire
+      - direction de séparation pour les dispositifs à lame/à la maison
+      - chemin de récupération propre lorsque le DNS ou les services échouent
+      - assez de documentation pour déboguer les problèmes plus tard
+
+      La configuration devrait rester pratique. Elle ne devrait pas devenir compliquée seulement parce qu'OpenWrt permet la complexité.
+
+      ## Rôles des réseaux de base
+
+      ### 1. Rôle du routeur principal
+
+      OpenWrt agit comme la couche de routeur contrôlable.
+
+      Cela signifie qu'il gère ou peut gérer:
+
+      - Connexion WAN
+      - Adresse du réseau local
+      - DHCP
+      - Transmission DNS
+      - règles du pare-feu
+      - transport de port
+      - Accès VPN
+      - exposition au service local
+      - débogage du réseau
+
+      Le routeur devient l'endroit où les décisions du réseau sont prises.
+
+      ### 2. Rôle du DNS
+
+      DNS est l'une des parties les plus importantes de la configuration parce que quand DNS casse, beaucoup de choses ressemblent à Internet est cassé même lorsque le routage fonctionne encore.
+
+      La configuration comprend le filtrage DNS via AdGuard Home, avec l'attention de:
+
+      - ce qui écoute sur le port 53
+      - si les clients utilisent le routeur comme DNS
+      - OpenWrt ou AdGuard possède une résolution DNS
+      - comportement de repli lorsque AdGuard échoue
+      - éviter les conflits entre `dnsmasq` et AdGuard Home
+
+      ### 3. Rôle du VPN
+
+      WireGuard fournit un accès à distance au réseau.
+
+      L'objectif est d'éviter d'exposer les services administratifs sensibles directement à Internet.
+
+      L'accès VPN est utile pour :
+
+      - gestion à distance du routeur
+      - atteindre les services locaux
+      - accès aux appareils de laboratoire
+      - réduire la nécessité d'une exposition directe du public
+      - test des services internes de l'extérieur
+
+      ### 4. Rôle de l'hôte de service
+
+      Le routeur peut gérer de petits services, mais cela crée un compromis.
+
+      L'exécution des services directement sur le routeur est pratique, mais cela signifie également que les problèmes de service peuvent affecter le périphérique de contrôle réseau.
+
+      La configuration doit garder ceci à l'esprit:
+
+      - fonctions du routeur critique d'abord
+      - services facultatifs
+      - journaux et chemins de redémarrage documentés
+      - espace de stockage vérifié
+      - pannes de service isolées si possible
+
+      ### 5. Direction de segmentation
+
+      Un commutateur géré et une planification VLAN peuvent séparer différents groupes d'appareils.
+
+      Les orientations possibles sont les suivantes :
+
+      - principaux/appareils domestiques
+      - dispositifs de laboratoire ou de service
+      - appareils invités ou isolés
+      - chemins d'accès administrateur seulement
+
+      La segmentation devrait être introduite lorsqu'elle résout un vrai problème, pas seulement parce que les VLAN sont disponibles.
+
+      ## Portée de la prestation
+
+      ### 1. Installation ouverte et accès de base
+
+      La première couche de travail est l'accès de base à OpenWrt:
+
+      - LuCI accessible
+      - SSH accessible
+      - Interface réseau
+      - clients recevant des adresses
+      - fonctionnement du routage Internet
+      - configuration du routeur sauvegardée si possible
+
+      Sans cette base stable, les services supplémentaires rendent le débogage plus difficile.
+
+      ### 2. Intégration WAN et ISP
+
+      Le côté WAN dépend de la configuration du FAI.
+
+      Les vérifications importantes comprennent :
+
+      - comment le périphérique ISP est connecté
+      - qu'OpenWrt soit derrière le routeur ISP ou qu'il manipule directement WAN
+      - si le PPPoE est impliqué
+      - si le marquage VLAN est nécessaire
+      - si la PI publique est accessible ou derrière CGNAT
+      - si le transfert de port est possible
+
+      Ces détails affectent tout le reste : VPN, accès à distance, transfert de port et services auto-organisés.
+
+      ### 3. LAN et DHCP
+
+      Le côté local devrait être prévisible.
+
+      Décisions importantes :
+
+      - Sous-réseau LAN
+      - Plage DHCP
+      - baux statiques pour appareils importants
+      - adresse IP du routeur
+      - Serveur DNS annoncé aux clients
+      - Nommer clairement les dispositifs
+
+      Les baux statiques sont utiles pour les appareils qui nécessitent des règles de pare-feu, des noms DNS ou un accès au service.
+
+      ### 4. Filtre DNS avec la maison AdGuard
+
+      AdGuard Home ajoute le filtrage et la visibilité, mais il devient aussi une dépendance.
+
+      Décisions importantes :
+
+      - AdGuard devrait-il écouter directement sur le port 53?
+      - Est-ce qu'OpenWrt `dnsmasq` devrait garder uniquement le DHCP?
+      - Comment configurer le DNS en amont?
+      - Et si AdGuard s'arrête ?
+      - Les clients utilisent-ils AdGuard ?
+
+      Un point d'échec commun est un conflit de port 53 entre AdGuard et le service OpenWrt DNS par défaut.
+
+      ### 5. Accès à distance WireGuard
+
+      WireGuard doit être configuré avec des règles claires :
+
+      - interface serveur
+      - client pair
+      - IP autorisées
+      - port d'écoute
+      - règle du pare-feu
+      - port avant si derrière un autre routeur
+      - Export de code QR pour la configuration du téléphone
+      - règles d'accès au réseau local ou à certains services
+
+      Le VPN doit être testé depuis l'extérieur du réseau local.
+
+      ### 6. Exposition au pare-feu et au port
+
+      Les règles de pare-feu doivent rester intentionnelles.
+
+      Questions à poser avant de tout exposer :
+
+      - Ce service doit-il être public?
+      - peut-on y accéder via VPN à la place ?
+      - L'appareil/service est-il mis à jour?
+      - L'authentification est-elle forte ?
+      - L'enregistrement est-il disponible?
+      - La règle peut-elle être supprimée plus tard?
+
+      Pour la plupart des services internes, l'accès VPN est meilleur que l'exposition publique.
+
+      ### 7. Gestion du stockage et des colis
+
+      Si le périphérique OpenWrt exécute des services supplémentaires, le stockage est important.
+
+      L'extension de recouvrement peut rendre le routeur plus utile, mais cela signifie aussi que l'appareil n'est plus un routeur minimal.
+
+      Contrôles importants:
+
+      - stockage gratuit
+      - sources de colis
+      - chemins de données de service
+      - stratégie de sauvegarde
+      - Carte SD ou fiabilité de stockage
+      - ce qui se brise si le stockage échoue
+
+      ### 8. Surveillance et rétablissement
+
+      Une configuration utile devrait inclure des façons de récupérer des erreurs.
+
+      Méthodes de récupération importantes:
+
+      - Accès SSH
+      - Accès LuCI
+      - sauvegarde de configuration
+      - accès série si nécessaire
+      - paramètres réseau connus
+      - changements de pare-feu documentés
+      - commandes de redémarrage/redémarrage du routeur
+      - commandes de redémarrage de service
+      - Registres pour les problèmes DNS/VPN/firewall
+
+      ## Décisions pratiques
+
+      ### Gardez le routeur compréhensible
+
+      OpenWrt peut faire beaucoup de choses, mais le routeur ne devrait pas devenir une pile de services sans papiers.
+
+      Chaque nouveau service devrait avoir une raison, un port, une méthode de redémarrage et un impact de défaillance.
+
+      ### Traiter le DNS comme une infrastructure essentielle
+
+      Le filtrage DNS est utile, mais si DNS échoue, les utilisateurs penseront que tout le réseau est cassé.
+
+      Le chemin DNS devrait être assez simple pour expliquer et déboguer.
+
+      ### Préférez VPN sur exposition publique
+
+      Si un service n'est que pour l'administration personnelle, il devrait généralement être atteint par le biais du VPN.
+
+      L'acheminement du port public devrait être intentionnel et limité.
+
+      ### Ajouter des VLAN uniquement lorsqu'ils résolvent un vrai problème
+
+      Les VLAN sont utiles pour la séparation, mais ils ajoutent aussi la complexité du débogage.
+
+      La conception devrait commencer par la raison de la séparation : niveau de confiance, type d'appareil, rôle de service ou isolement des invités.
+
+      ### Détails spécifiques au FSI
+
+      Les détails des FAI sont importants parce qu'ils affectent WAN, PPPoE, VLAN, CGNAT, le comportement IP public, et le transfert de port.
+
+      Ces détails doivent être enregistrés car ils sont faciles à oublier et douloureux à redécouvrir.
+
+      ## Notes de dépannage
+
+      ### Défaut DNS
+
+      Symptômes:
+
+      - les sites Web ne sont pas chargés
+      - `ping 1.1.1.1` fonctionne mais les noms de domaine échouent
+      - `nslookup` fois dehors
+      - les clients montrent connecté mais ne peuvent pas naviguer normalement
+
+      À vérifier :
+
+      ```bash
+      nslookup example.com
+      nslookup example.com 1.1.1.1
+      netstat -lnup | grep ':53'
+      logread | grep -i dns
+      ```
+
+      Causes probables:
+
+      - AdGuard ne pas écouter
+      - Conflit `dnsmasq`
+      - mauvais DNS en amont
+      - bloquant le pare-feu DNS
+      - clients n'utilisant pas le routeur DNS
+      - service local lié à la mauvaise interface
+
+      ### WireGuard non accessible
+
+      Symptômes:
+
+      - pair ne montre aucune poignée de main
+      - VPN fonctionne localement mais pas en dehors
+      - l'analyse de port ne montre pas l'accès UDP attendu
+      - téléphone ne peut pas se connecter sur les données mobiles
+
+      À vérifier :
+
+      ```bash
+      wg show
+      logread | grep -i wireguard
+      ```
+
+      Causes probables:
+
+      - règles de pare-feu manquantes
+      - port avant manquant sur routeur en amont
+      - mauvais paramètre
+      - CGNAT
+      - IP mal autorisées
+      - inadéquation de la route client
+
+      ### Le transfert de port ne fonctionne pas
+
+      À vérifier :
+
+      - Le service écoute-t-il localement?
+      - Le port est-il transmis à l'IP interne correcte ?
+      - Est-ce que le routeur de l'ISP se déplace aussi?
+      - La PI publique est-elle vraiment publique?
+      - Le service est-il TCP ou UDP?
+      - Un pare-feu local le bloque ?
+      - Vous testez depuis l'extérieur du réseau ?
+
+      Un port apparaissant fermé ne signifie pas toujours qu'OpenWrt est mal. Le chemin ISP/routeur en amont peut être le problème.
+
+      ### Service en cours mais non accessible
+
+      À vérifier :
+
+      ```bash
+      service <name> status
+      logread -e <name>
+      netstat -lntup
+      ```
+
+      Causes possibles:
+
+      - service lié à localhost seulement
+      - décalage de la zone pare-feu
+      - mauvais port
+      - mauvaise interface
+      - service écrasé
+      - fichier environnement/config manquant
+      - DNS indique la mauvaise adresse
+
+      ## Ce qu'une configuration terminée devrait montrer
+
+      Une solide version terminée de ce réseau devrait montrer:
+
+      - OpenWrt fonctionne de manière fiable en tant que routeur principal/couche de contrôle
+      - clients recevant des paramètres corrects DHCP
+      - Le filtrage DNS fonctionne intentionnellement
+      - WireGuard accès à distance testé externe
+      - règles de pare-feu documentées
+      - exposition du public minimisée
+      - dispositifs importants utilisant des baux statiques
+      - ports de service connus et documentés
+      - chemin de sauvegarde/récupération disponible
+      - VLANs optionnels conçus autour des besoins réels de séparation
+      - Détails WAN spécifiques au FAI enregistrés
+
+      ## Preuves à retenir
+
+      Voici quelques éléments de preuve utiles à cette note :
+
+      - diagramme de réseau
+      - Captures d'écran de l'interface OpenWrt
+      - Captures d'écran de la zone pare-feu
+      - Captures d'écran DHCP / location statique
+      - Capture d'écran du tableau de bord d'AdGuard Home
+      - Capture d'écran par les pairs de WireGuard
+      - Capture d'écran de la génération QR VPN
+      - transfert de port screenshots
+      - Sortie `wg show` avec suppression de données sensibles
+      - Résultats des essais DNS
+      - capture d'écran de stockage/overlay
+      - notes sur le comportement du routeur ISP/ONT/WAN
+
+      ## Hypothèses techniques
+
+      Cette configuration suppose que le périphérique OpenWrt est assez puissant et stable pour les services ajoutés.
+
+      Il suppose également que le propriétaire du réseau comprend que l'ajout de filtrage DNS, VPN et services locaux au routeur augmente l'importance du routeur.
+
+      La configuration suppose que certains services sont mieux accessibles via VPN au lieu d'être exposés publiquement.
+
+      ## Principaux risques
+
+      - Mauvaise configuration DNS brisant la navigation normale
+      - exposer les services administratifs à Internet
+      - perdre l'accès après les changements de pare-feu
+      - Le comportement WAN change après les mises à jour du routeur ISP
+      - CGNAT bloquer l'accès entrant
+      - panne de stockage si les services dépendent d'une superposition étendue
+      - Changements en VLAN/pare-feu sans papiers causant une confusion future
+      - trop de services sur le routeur
+      - s'appuyant sur un seul appareil pour le routage, DNS, VPN et services
+      - oubliant de sauvegarder la configuration avant les modifications majeures
+
+      ## État actuel
+
+      La configuration du réseau OpenWrt est une infrastructure en évolution.
+
+      La valeur actuelle n'est pas une architecture finale parfaite. La valeur est dans la construction d'un réseau contrôlable où DNS, VPN, pare-feu, services et dépannage sont compris comme des pièces connectées.
+
+      Cette configuration crée également une base pour les futures notes sur AdGuard Home, WireGuard, DDNS, le transfert de port, le déploiement Docker/service et la segmentation réseau.
+
+      ## Ce que la présente note ne prétend pas
+
+      La présente note ne prétend pas que chaque réseau domestique devrait être construit de cette façon.
+
+      Elle ne prétend pas qu'OpenWrt devrait exécuter tous les services possibles.
+
+      Il ne prétend pas que les filtres VLAN, VPN ou DNS sont toujours nécessaires.
+
+      C'est une note de terrain sur la construction d'un réseau pratique contrôlable et l'apprentissage des problèmes qui apparaissent lorsqu'un routeur domestique devient un petit dispositif d'infrastructure.
+
+      ## À emporter pratique
+
+      Une bonne configuration OpenWrt ne consiste pas à activer toutes les fonctionnalités avancées.
+
+      La partie utile est d'avoir le contrôle et la compréhension:
+
+      - comment les clients obtiennent des adresses
+      - où le DNS est manipulé
+      - quel trafic est autorisé
+      - ce qui est exposé publiquement
+      - comment fonctionne l'accès à distance
+      - où les services fonctionnent
+      - comment récupérer quand quelque chose casse
+
+      C'est ce qui rend le réseau durable au lieu de simplement personnalisé.
 seoTitle: "OpenWrt Home Network Setup"
 seoDescription: "A practical field note about building and troubleshooting an OpenWrt home network with routing, DNS, VPN, VLAN planning, and small service hosting."
 ---

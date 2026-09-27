@@ -18,6 +18,504 @@ date: "2026-07-08"
 updated: "2026-07-25"
 featured: true
 published: true
+translations:
+  fr:
+    title: "Relais communautaire en temps réel"
+    category: "Intégrations temps réel"
+    summary: "Notes sur un relais côté serveur connectant les événements d’un service en direct et un canal de discussion."
+    resumeSummary: >-
+      Construit un relais côté serveur qui relie les événements de service en temps réel et la messagerie
+      d'application à une plate-forme de communication externe. La conception couvre le flux des messages dans
+      les deux directions, le filtrage des canaux, le formatage cohérent, la configuration, la sélection des
+      événements et la prévention des boucles, de sorte que les messages automatisés ne font pas écho
+      indéfiniment entre les systèmes. Il traite l'intégration comme un pont de communication opérationnel:
+      les événements utiles doivent être livrés rapidement et clairement, tandis que les permissions,
+      l'origine du message et le comportement d'échec restent suffisamment contrôlés pour que le relais puisse
+      être utilisé quotidiennement.
+    body: |-
+
+      ## Pourquoi cette note existe
+
+      Cette note documente un événement personnalisé côté serveur et un relais de message.
+
+      L'objectif était de connecter le service hébergé à un canal de communication externe afin que les opérateurs et les utilisateurs puissent suivre l'activité d'application sans être connectés tout le temps.
+
+      La direction du relais comprenait:
+
+      - chat de service hébergé à Discord
+      - Discorder les messages au service hébergé
+      - événements du serveur vers Discord
+      - joignez/levez les messages de l'utilisateur
+      - Événements possibles de réalisation ou de progression
+      - configuration pour le comportement du jeton bot/canal/serveur
+      - formatage clair des messages
+      - filtrage sûr pour éviter les boucles indésirables ou les fuites de commandes
+
+      C'était un vrai problème d'intégration : un côté est un service hébergé, l'autre est une connexion bot/API Discord, et les deux ont leur propre modèle d'événement.
+
+      ## Contexte du projet
+
+      Le relais appartient à la même configuration de service hébergée plus grande que:
+
+      - ExtensionRuntime hébergement
+      - Extension personnalisée de protection de surface
+      - règles de comportement du service côté serveur
+      - Discorder le flux de travail de la communauté
+      - journaux de serveurs et administration
+
+      Le but n'était pas seulement d'envoyer des messages de chat.
+
+      ## Ce que cette extension signifie prouver
+
+      - Les services hébergés peuvent être étendus avec des intégrations pratiques
+      - La logique du relais de discorde nécessite une gestion prudente de la direction des messages
+      - Le chat bidirectionnel nécessite la prévention des boucles
+      - les messages d'événements du serveur doivent être utiles mais pas bruyants
+      - configuration doit garder les jetons et les identifiants de canal hors du code
+      - intégrations doivent échouer en toute sécurité si Discord n'est pas disponible
+      - une extension de service peut agir comme outillage opérationnel, pas seulement le contenu comportemental de service
+
+      ## Pioche et outils utilisés
+
+      ### couche de service
+
+      - service hébergé
+      - ExtensionRuntime
+      - C#
+      - cycle de vie de l'extension côté serveur
+      - Crochets de chat
+      - l'utilisateur joint/leave manipulation
+      - hameçons de l'événement serveur, le cas échéant
+
+      ### Couche de communication externe
+
+      - Compte bot discord
+      - jeton bot
+      - Numéro de canal de discorde
+      - message envoyer la direction
+      - message reçu direction
+      - filtrage des canaux
+      - formatage et désinfection
+
+      ### Calque du serveur
+
+      - Environnement du serveur Linux
+      - ExtensionService rapide
+      - fichiers de configuration
+      - journaux
+      - redémarrer/recharger le flux de travail
+      - déploiement à travers les fichiers GitHub / dépôt
+
+      ## Construction prévue
+
+      La construction prévue était une extension qui relaie l'activité sélectionnée entre le service hébergé et Discord.
+
+      Une version terminée devrait prendre en charge:
+
+      - chat dans l'application apparaît dans un canal Discord configuré
+      - Les messages discordants de ce canal apparaissent dans la demande
+      - les messages bot ne retournent pas dans le service à plusieurs reprises
+      - les messages de jointure/leave de l'utilisateur peuvent être affichés sur Discord
+      - les messages de démarrage/arrêt/état du serveur peuvent être affichés lorsque cela est utile
+      - configuration est modifiable sans changement de code source
+      - secrets ne sont pas engagés à GitHub
+      - les erreurs sont enregistrées clairement
+      - le serveur reste jouable si la connexion Discord échoue
+
+      ## Flux de messages
+
+      Le relais a besoin de deux directions claires.
+
+      ### Service hébergé à la plateforme externe
+
+      ```txt
+      user sends in-application chat
+        ↓
+      ExtensionRuntime chat hook receives message
+        ↓
+      Relay formats message
+        ↓
+      Discord bot sends message to configured channel
+      ```
+
+      Format de l'exemple :
+
+      ```txt
+      [hosted service] PlayerName: message
+      ```
+
+      ### Plateforme externe vers le service hébergé
+
+      ```txt
+      Discord user sends message in configured channel
+        ↓
+      Bot receives message
+        ↓
+      Relay filters and formats it
+        ↓
+      Message appears in hosted service chat
+      ```
+
+      Format de l'exemple :
+
+      ```txt
+      [Discord] Username: message
+      ```
+
+      Les deux directions doivent être visiblement différentes afin que les utilisateurs sachent d'où vient un message.
+
+      ## Prévention des boucles
+
+      Le relais bidirectionnel peut créer accidentellement des boucles.
+
+      Par exemple:
+
+      ```txt
+      Discord message → hosted service
+      hosted service relay sees message → sends back to Discord
+      Discord bot sees its own message → sends again
+      ```
+
+      L'extension nécessite des règles comme:
+
+      - ignorer les messages envoyés par le robot lui-même
+      - accepter uniquement les messages d'un canal Discord configuré
+      - marquer les messages relayés afin qu'ils ne soient pas relayés à nouveau
+      - éviter de transmettre les messages du système à moins que cela ne soit prévu
+      - éviter les commandes de relais si la sortie de commande doit rester privée
+
+      La prévention des boucles est l'une des parties les plus importantes de la conception des relais.
+
+      ## Filtrage du canal de communication
+
+      Le bot ne devrait pas écouter chaque canal.
+
+      Il ne devrait relayer que depuis l'ID du canal configuré.
+
+      Exemple de direction de configuration:
+
+      ```txt
+      DiscordChannelId = 123456789012345678
+      ```
+
+      Cela empêche les messages aléatoires de Discord d'apparaître dans le service.
+
+      Il rend également le relais plus facile à modérer car un canal devient le pont officiel.
+
+      ## Direction de configuration
+
+      Une extension de relais pratique devrait avoir une configuration pour:
+
+      ```txt
+      bot token
+      channel ID
+      server name/prefix
+      enable Discord-to-service
+      enable service-to-Discord
+      enable join/leave messages
+      enable server event messages
+      message format
+      admin bypass or filter rules
+      ```
+
+      Les secrets ne devraient pas être confiés à GitHub.
+
+      Le jeton bot doit être stocké dans un fichier de configuration, une variable d'environnement ou un emplacement côté serveur privé selon l'implémentation.
+
+      Le contenu du dépôt public ne devrait comporter que des exemples comme :
+
+      ```txt
+      BotToken = "PUT_TOKEN_HERE"
+      ChannelId = "PUT_CHANNEL_ID_HERE"
+      ```
+
+      ## Formatage de la discussion
+
+      Le formatage doit rester lisible.
+
+      Bons formats de messages :
+
+      ```txt
+      [hosted service] PlayerName: Hello
+      [Discord] Username: Hello from Discord
+      [Server] PlayerName joined the service data
+      [Server] PlayerName left the service data
+      ```
+
+      Évitez le formatage exagéré qui devient ennuyeux dans le chat actif.
+
+      Objectifs de formatage utiles :
+
+      - source est évidente
+      - Nom d'utilisateur visible
+      - le contenu du message est conservé
+      - les événements du serveur sont distincts
+      - les messages de modération/système ne ressemblent pas à un chat utilisateur
+
+      ## Événements du serveur
+
+      Événements utiles à relayer:
+
+      - serveur démarré
+      - arrêt du serveur
+      - utilisateur rejoint
+      - utilisateur gauche
+      - événement de service important
+      - changement de statut pertinent
+      - messages de décès si désiré
+      - messages de réussite/progression si disponibles
+
+      Chaque événement ne devrait pas être activé par défaut.
+
+      Trop d'événements peuvent rendre Discord bruyant.
+
+      Un bon relais devrait permettre d'activer ou de désactiver les catégories d'événements.
+
+      ## Risques externes liés à la plate-forme vers le service
+
+      La discorde au service est plus sensible que le service à la discorde.
+
+      Si des messages discordants apparaissent dans la demande, l'extension devrait tenir compte :
+
+      - Les noms d'utilisateur de discord peuvent ne pas correspondre aux noms de service hébergés
+      - Les messages de discorde peuvent être trop longs
+      - Le balisage de la discorde peut nuire à l'application
+      - mention comme `@everyone` ne devrait pas devenir perturbateur
+      - les commandes bot ne doivent pas être transmises
+      - les pièces jointes/images ne peuvent pas être affichées directement dans le chat de service hébergé
+      - les règles de modération peuvent différer entre Discord et le serveur
+
+      Le filtrage n'est pas facultatif pour un relais stable.
+
+      ## Risques liés au service à la production
+
+      service-to-Discord est plus facile mais a encore besoin de soins.
+
+      Problèmes potentiels:
+
+      - sortie de commande de fuite
+      - fuite de messages administratifs seulement
+      - Spamming Discorde avec des événements répétés
+      - relais des messages de débogage du serveur
+      - exposant les détails du serveur privé
+      - formater les messages d'une manière qui pings les gens accidentellement
+
+      Le relais ne devrait envoyer que les messages utiles à la visibilité normale du serveur.
+
+      ## Gestion des défaillances
+
+      Discord peut ne pas être disponible.
+
+      Le relais doit gérer :
+
+      - Mauvais jeton bot
+      - ID du canal manquant
+      - bot non invité au serveur
+      - permissions manquantes
+      - défaillance du réseau
+      - limites de taux
+      - Erreurs d'API de discorde
+      - redémarrer le serveur pendant que le bot se reconnecte
+
+      Le service hébergé ne devrait pas s'écraser parce que le relais ne peut pas atteindre Discord.
+
+      Un comportement plus sûr :
+
+      ```txt
+      log the relay error
+      disable relay temporarily if needed
+      keep hosted service running
+      retry or require restart depending on implementation
+      ```
+
+      ## Autorisations
+
+      Le robot Discord n'a besoin que des autorisations nécessaires pour le relais.
+
+      Il est probable que :
+
+      ```txt
+      View Channel
+      Send Messages
+      Read Message History
+      ```
+
+      Selon la mise en œuvre, il peut également être nécessaire:
+
+      ```txt
+      Use External Emojis
+      Embed Links
+      ```
+
+      Mais le relais devrait éviter les autorisations administratives inutiles.
+
+      Un bot pour le relais de chat n'a pas besoin de permissions complètes de l'administrateur Discord.
+
+      ## Liste de vérification
+
+      ### Service à la plateforme externe
+
+      - envoyer le chat de service hébergé normal
+      - vérifier que Discord reçoit le message
+      - vérifier que le nom d'utilisateur apparaît correctement
+      - symboles d'essai et ponctuation
+      - tester les messages longs
+      - tester les messages vides/invalides
+      - tester plusieurs utilisateurs bavarder
+      - tester les événements de jointure/de sortie si activé
+
+      ### Plateforme externe vers le service
+
+      - envoyer le message Discord dans le canal configuré
+      - vérifier que le service hébergé le reçoit
+      - vérifier que les messages bot sont ignorés
+      - tester les messages d'un autre canal
+      - test Mentions de discorde
+      - marquage d ' essai
+      - tester les messages longs
+      - Pièces d'essai
+      - tester les messages d'apparence de commande
+
+      ### Prévention des boucles
+
+      - envoyer un message de Discord
+      - confirmer qu'il apparaît dans la demande une fois
+      - confirmer qu'il ne rebondit pas à plusieurs reprises
+      - envoyer un message du service hébergé
+      - confirmer qu'il apparaît dans Discord une fois
+      - confirmer que la sortie du disque est ignorée
+
+      ### Essai de défaillance
+
+      - faux jeton
+      - mauvaise identification du canal
+      - bot accès manquant au canal
+      - bot déconnecté
+      - Discorde non disponible
+      - redémarrage du serveur
+      - recharger la configuration si prise en charge
+
+      ## Décisions pratiques
+
+      ### Garder un canal de relais spécifique
+
+      Le relais ne devrait ponter qu'un canal Discord prévu.
+
+      ### Faire apparaître les sources
+
+      les utilisateurs doivent savoir si un message provient du service ou de Discord.
+
+      ### Ne pas tout relayer
+
+      La visibilité utile du serveur est bonne.
+
+      ### Garder le jeton hors de GitHub
+
+      Une repo publique ou privée devrait encore éviter de commettre de véritables jetons de bot.
+
+      ### Échec sans tuer le service hébergé
+
+      L'intégration des discordes est utile, mais la stabilité des services hébergés est plus importante.
+
+      ### Éviter les fuites de commande
+
+      Les commandes Admin, la sortie de console et les messages de serveur cachés ne doivent pas être relayés à moins d'être explicitement prévus.
+
+      ## Ce qu'une extension terminée devrait montrer
+
+      Un relais fini solide devrait montrer:
+
+      - structure de source d'extension propre
+      - fichier de configuration ou classe de configuration
+      - jeton/canal ID manipulé en toute sécurité
+      - chat de service hébergé à Discord
+      - Discord canal pour le chat de service hébergé
+      - filtre auto-message bot
+      - filtrage des canaux
+      - joint/leave event relais si activé
+      - messages utiles pour les événements du serveur
+      - formatage lisible
+      - journaux d'erreur
+      - pas de crash si Discord échoue
+      - ExtensionRuntime build réussi
+      - confirmation de chargement du serveur
+      - Dépôt GitHub sans secret
+
+      ## Preuves à retenir
+
+      Voici quelques éléments de preuve utiles à cette note :
+
+      - Structure de la réserve GitHub
+      - exemple de configuration avec faux jeton
+      - construire la sortie
+      - ExtensionRuntime charger l'extension
+      - chat de service hébergé apparaissant dans Discord
+      - Message de discorde apparaissant dans le service hébergé
+      - joignez / laissez la capture d'écran de l'événement
+      - test de prévention de boucle
+      - Configuration de la permission de discorder
+      - Gestion des journaux d'erreur
+      - Instructions de configuration README
+
+      ## Hypothèses techniques
+
+      Cette note suppose que le relais est construit comme une extension ExtensionRuntime ou un composant compagnon connecté au service hébergé.
+
+      Il suppose que l'intégration Discord utilise un jeton bot et un canal configuré.
+
+      Il suppose que le relais est destiné à un serveur privé/communautaire contrôlé, pas un grand serveur public avec des exigences de modération élevées.
+
+      ## Principaux risques
+
+      - commettre un vrai jeton de bot Discord
+      - relais de messages bot et création de boucles
+      - transmission de messages du mauvais canal Discord
+      - Défaillance de l'API de discorde plantant le service hébergé
+      - permissions de robot manquantes
+      - relais de messages privés/admin
+      - événements de serveur spammy
+      - Balisage discord ou mention de perturbations dans le chat de la demande
+      - pas de différence claire entre le service et les messages Discord
+      - ne pas tester le comportement de reconnect
+
+      ## État actuel
+
+      Cette note représente la direction d'extension du relais Discord pour le service hébergé.
+
+      Il appartient à côté de la note d'hébergement ExtensionRuntime et de la note de protection partagée parce que les trois font partie du même système opérationnel:
+
+      - héberge le serveur
+      - appliquer les règles relatives aux données de service
+      - connecter le service à Discord
+
+      La valeur principale est que le serveur devient plus facile à suivre et à gérer depuis l'extérieur du service.
+
+      ## Ce que la présente note ne prétend pas
+
+      La présente note ne prétend pas remplacer un robot de modération complet.
+
+      Elle ne prétend pas que chaque événement Discord devrait être relayé.
+
+      Il ne prétend pas que le relais soit adapté aux grands serveurs publics sans contrôles de modération supplémentaires.
+
+      Il documente une extension d'intégration pratique pour connecter l'activité de service hébergé avec un canal Discord.
+
+      ## À emporter pratique
+
+      Un relais Discord semble simple, mais les parties dures sont la fiabilité et les limites.
+
+      Les éléments importants sont les suivants:
+
+      - direction claire du message
+      - aucune boucle
+      - filtrage des canaux
+      - jeton de sécurité
+      - formatage lisible
+      - relais d'événements optionnel
+      - comportement de défaillance sûr
+      - Aucune fuite de commande
+
+      Cela en fait une note d'intégration et d'opérations, pas seulement un pont de chat.
 seoTitle: "Real-Time Event and Message Relay"
 seoDescription: "A practical note about building a server-side relay for application messaging, external messages, service events, configuration, and testing."
 ---

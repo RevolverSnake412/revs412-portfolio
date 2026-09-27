@@ -17,6 +17,482 @@ date: "2025-02-06"
 updated: "2026-07-25"
 featured: true
 published: true
+translations:
+  fr:
+    title: "Configuration d’accès distant WireGuard"
+    category: "Réseau"
+    summary: "Notes sur la mise en place de l’accès distant WireGuard pour un réseau domestique ou de laboratoire, avec pare-feu, pairs, QR et dépannage."
+    resumeSummary: >-
+      Documenté un déploiement d'accès à distance WireGuard pour un réseau d'accueil ou de laboratoire, y
+      compris la configuration du serveur et des pairs, la gestion des clés, la conception de l'adresse
+      autorisée, les règles de pare-feu, la fourniture de QR au client et les tests de l'extérieur du réseau
+      local. Il enregistre également les modes de défaillance et les décisions de sécurité courants, rendant
+      l'administration à distance répétable sans confondre une poignée de main VPN réussie avec un itinéraire
+      et un comportement politiques corrects.
+    body: |-
+
+      ## Pourquoi cette note existe
+
+      L'accès à distance est utile lorsqu'un réseau a des routeurs, des serveurs, des services locaux ou des appareils de laboratoire qui ne devraient pas être directement exposés à Internet.
+
+      WireGuard est un bon ajustement car il est simple, rapide et plus facile à raisonner que de nombreuses configurations VPN traditionnelles.
+
+      L'objectif de cette configuration n'est pas de rendre tout public. L'objectif est le contraire : garder les services internes privés et les accéder via un chemin VPN contrôlé.
+
+      ## Contexte du réseau
+
+      La configuration est basée sur un réseau home/lab où le routeur gère les services locaux et le contrôle du réseau.
+
+      WireGuard est utilisé pour se connecter au réseau de l'extérieur, généralement à partir d'un téléphone ou d'un ordinateur portable.
+
+      Cas d'utilisation typiques:
+
+      - gérer le routeur à distance
+      - accès aux services locaux
+      - atteindre les tableaux de bord internes
+      - services d'essai sans exposition du public
+      - éviter d'ouvrir des ports inutiles
+      - maintenir des serveurs ou des périphériques en dehors de la maison
+
+      ## Ce que cette configuration veut prouver
+
+      - l'accès à distance devrait être intentionnel, et non un ensemble de ports exposés
+      - L'accès VPN est généralement plus sûr que d'exposer les services administratifs publiquement
+      - Les règles de pare-feu comptent autant que les clés WireGuard
+      - les essais doivent être effectués à l'extérieur du réseau local;
+      - La configuration QR facilite la configuration mobile
+      - Les routeurs CGNAT ou amont peuvent bloquer l'accès VPN entrant
+      - une petite configuration VPN a encore besoin de documentation
+
+      ## Outils et domaines utilisés
+
+      ### Layer VPN
+
+      - Garde-fils
+      - paires de clés privées/publiques
+      - configuration des pairs
+      - IP autorisées
+      - configuration du paramètre
+      - essai de poignée de main
+      - QR export pour les clients mobiles
+
+      ### Couche réseau
+
+      - Configuration de l'interface OpenWrt
+      - configuration de la zone/règle du pare-feu
+      - Port d'écoute UDP
+      - avant si derrière un routeur en amont
+      - Règles d'accès au réseau local
+      - direction de routage
+
+      ### Couche d'essai
+
+      - test de données mobiles
+      - test de réseau externe
+      - `wg show`
+      - journaux
+      - contrôle d'accessibilité du port
+      - vérification de l'itinéraire du client
+
+      ## Construction prévue
+
+      La construction prévue est une configuration VPN où un périphérique distant peut se connecter en toute sécurité au réseau home/lab.
+
+      Une configuration terminée devrait permettre à un appareil client de confiance de :
+
+      - se connecter de l'extérieur du réseau local
+      - recevoir une adresse VPN
+      - atteindre les ressources internes autorisées
+      - gérer les services locaux au moyen de PI privées
+      - éviter d'exposer publiquement ces services
+      - se reconnecter de manière fiable après les changements de réseau si possible
+
+      ## Concepts fondamentaux
+
+      ### Interface serveur
+
+      L'interface du serveur WireGuard vit sur le routeur ou la passerelle réseau.
+
+      Elle a :
+
+      - clé privée
+      - clé publique
+      - écoute du port UDP
+      - Sous-net VPN
+      - définitions des pairs
+      - règles du pare-feu
+
+      Exemple de direction:
+
+      ```txt
+      WireGuard server: 10.7.0.1/24
+      Client peer:      10.7.0.2/32
+      Listening port:   51820 or custom UDP port
+      ```
+
+      ### Client
+
+      Le client pair est habituellement un téléphone ou un ordinateur portable.
+
+      Elle a :
+
+      - clé privée
+      - clé publique
+      - IP autorisées
+      - adresse du paramètre
+      - port terminal
+      - Option DNS si nécessaire
+      - persistante si derrière NAT
+
+      ### IP autorisées
+
+      Les IP autorisés décident du trafic qui traverse le tunnel.
+
+      Choix courants:
+
+      ```txt
+      10.7.0.2/32
+      ```
+
+      pour l'adresse client du côté serveur.
+
+      Pour le routage client :
+
+      ```txt
+      192.168.1.0/24
+      ```
+
+      pour accéder uniquement au réseau local, ou:
+
+      ```txt
+      0.0.0.0/0
+      ```
+
+      pour parcourir tout le trafic via le VPN.
+
+      Pour une configuration d'accès à distance home/lab, le routage des réseaux internes est souvent plus propre à moins que le VPN complet ne soit nécessaire.
+
+      ## Portée de la prestation
+
+      ### 1. Créer une interface WireGuard
+
+      Créez une interface WireGuard sur le routeur.
+
+      L'interface devrait avoir son propre sous-net VPN et une paire de clés.
+
+      L'interface serveur ne devrait pas réutiliser le sous-réseau LAN normal. Il devrait avoir une gamme VPN dédiée afin qu'il soit plus facile à comprendre et pare-feu.
+
+      ### 2. Créer la configuration des pairs
+
+      Chaque client devrait avoir son propre pair.
+
+      Une bonne configuration par les pairs comprend:
+
+      - paire unique de clés privées/publiques
+      - IP VPN unique
+      - nom clair des pairs/commentaire
+      - IP autorisées
+      - persistance de la rétention si nécessaire
+
+      Évitez de partager un pair sur de nombreux appareils. Il rend le dépannage et la révocation plus difficile.
+
+      ### 3. Configurer les règles du pare-feu
+
+      WireGuard a besoin de règles de pare-feu dans deux directions :
+
+      1. permettre le trafic UDP entrant vers le port d'écoute WireGuard
+      2. permettre aux clients VPN d'atteindre les réseaux ou services internes prévus
+
+      Le VPN ne devrait pas avoir automatiquement accès à tout sauf intentionnellement.
+
+      ### 4. Gérer la situation du routeur en amont ou du FSI
+
+      Si le routeur OpenWrt est derrière un autre routeur ISP, le routeur en amont doit faire suivre le port UDP WireGuard vers OpenWrt.
+
+      Si la connexion ISP est derrière CGNAT, l'entrée WireGuard peut ne pas fonctionner avec le transfert de port normal.
+
+      Dans ce cas, les solutions de remplacement sont les suivantes:
+
+      - Demande de PI publique
+      - utilisant un VPS comme relais
+      - utilisant un service de tunnel
+      - inverser la direction de connexion
+      - utilisant une autre approche d'accès à distance
+
+      ### 5. Exporter le code QR pour le téléphone
+
+      Pour la configuration mobile, l'exportation QR est la méthode la plus facile.
+
+      Le code QR devrait comprendre :
+
+      - clé privée client
+      - clé publique du serveur
+      - paramètre
+      - IP autorisées
+      - DNS si nécessaire
+      - persistance de la rétention si nécessaire
+
+      Le code QR contient une configuration sensible. Il ne doit pas être partagé ou stocké publiquement.
+
+      ### 6. Essai de l ' extérieur
+
+      Les essais doivent être effectués à partir d'un autre réseau.
+
+      Bons tests :
+
+      - téléphone sur les données mobiles
+      - ordinateur portable d'un autre Wi-Fi
+      - connexion réseau externe
+      - pas la même connexion Wi-Fi locale
+
+      Un VPN peut apparaître correctement configuré alors qu'il échoue toujours de l'extérieur en raison de problèmes de pare-feu, de renvoi de port, de CGNAT ou de fin de course.
+
+      ## Décisions pratiques
+
+      ### Utiliser VPN au lieu d'exposer les services d'administration
+
+      Les panneaux de routeur, les tableaux de bord, les SSH et les services locaux devraient habituellement rester privés.
+
+      WireGuard donne un chemin d'accès contrôlé au lieu de nombreux ports exposés.
+
+      ### Donnez à chaque appareil son propre pair
+
+      Des pairs séparés facilitent la révocation d'un appareil sans en briser d'autres.
+
+      Il rend également les journaux et le dépannage plus clair.
+
+      ### Utilisez un port UDP personnalisé si utile
+
+      Un port personnalisé ne remplace pas la sécurité, mais il peut éviter les conflits et réduire le bruit.
+
+      La vraie sécurité est dans les clés WireGuard et les règles de pare-feu.
+
+      ### Documenter le paramètre
+
+      Le client doit savoir où se connecter.
+
+      Le paramètre peut être:
+
+      ```txt
+      public-ip:port
+      domain-name:port
+      ddns-name:port
+      ```
+
+      Si la PI publique change souvent, le DDNS est utile.
+
+      ### Tester le routage séparément de la poignée de main
+
+      Une poignée de main réussie prouve seulement que la connexion VPN est établie.
+
+      Il ne prouve pas que l'accès LAN, le DNS ou le renvoi du pare-feu est correct.
+
+      ## Exemple de forme de configuration
+
+      Ce n'est pas une config copier-coller. Il montre la structure.
+
+      ### Serveur
+
+      ```ini
+      [Interface]
+      Address = 10.7.0.1/24
+      ListenPort = 51820
+      PrivateKey = <server-private-key>
+
+      [Peer]
+      PublicKey = <client-public-key>
+      AllowedIPs = 10.7.0.2/32
+      ```
+
+      ### Client
+
+      ```ini
+      [Interface]
+      Address = 10.7.0.2/32
+      PrivateKey = <client-private-key>
+      DNS = 192.168.1.1
+
+      [Peer]
+      PublicKey = <server-public-key>
+      Endpoint = example.duckdns.org:51820
+      AllowedIPs = 192.168.1.0/24
+      PersistentKeepalive = 25
+      ```
+
+      Utilisez le sous-réseau LAN, le terminal et le port pour le réseau réel.
+
+      ## Dépannage
+
+      ### Pas de poignée de main
+
+      Symptômes:
+
+      - client dit actif mais aucun trafic fonctionne
+      - `wg show` ne montre aucune poignée de main
+      - les compteurs de transfert restent à zéro
+
+      À vérifier :
+
+      ```bash
+      wg show
+      logread | grep -i wireguard
+      ```
+
+      Causes probables:
+
+      - mauvais paramètre
+      - mauvais port
+      - Port UDP non transmis
+      - règles de pare-feu manquantes
+      - CGNAT
+      - mauvaise clé publique
+      - client pas réellement sur le réseau externe
+      - routeur en amont bloquant le trafic entrant
+
+      ### Fonctionne à la main mais les accès au réseau local
+
+      Symptômes:
+
+      - `wg show` affiche une poignée de main
+      - client ne peut pas atteindre les périphériques routeurs/LAN
+      - IP VPN fonctionne mais les ressources internes échouent
+
+      Causes probables:
+
+      - La zone de pare-feu ne permet pas la transmission vers le réseau local
+      - IPs autorisés manquant sous-net LAN
+      - inadéquation de la route client
+      - périphérique interne bloque le sous-réseau VPN
+      - mauvais sous-net LAN dans la configuration du client
+      - DNS pointe vers le mauvais serveur
+
+      ### Fonctionne sur un réseau mais pas sur un autre
+
+      Causes probables:
+
+      - blocs de réseau restrictifs UDP
+      - paramètre DNS non résolu
+      - comportement du transporteur mobile
+      - changement de propriété intellectuelle publique
+      - DDNS non mis à jour
+      - Numéro NAT en amont
+
+      ### DNS ne fonctionne pas via VPN
+
+      Symptômes:
+
+      - Travaux d'accès IP
+      - les noms de domaine ne résolvent pas
+
+      À vérifier :
+
+      - réglage DNS client
+      - routeur DNS service
+      - Adresse d'écoute AdGuard/dnsmasq
+      - pare-feu permet DNS à partir du sous-net VPN
+      - Serveur DNS accessible via VPN
+
+      ## Notes de sécurité
+
+      WireGuard est sécurisé lorsque configuré correctement, mais le réseau environnant est toujours important.
+
+      Bonnes pratiques:
+
+      - garder les clés privées privées
+      - utiliser un pair par appareil
+      - supprimer les vieux pairs
+      - ne pas partager les codes QR publiquement
+      - éviter l'accès complet au réseau local, sauf si nécessaire
+      - préféré VPN pour les services d'administration
+      - mettre à jour le firmware du routeur
+      - documenter port UDP exposé
+      - surveiller les tentatives de connexion inconnues si possible
+
+      ## Ce qu'une configuration terminée devrait montrer
+
+      Une configuration solide devrait montrer:
+
+      - Interface WireGuard active
+      - client pair créé
+      - QR code généré pour la configuration du téléphone
+      - poignée de main externe confirmée
+      - Accès au réseau local testé
+      - Comportement DNS testé si nécessaire
+      - règles de pare-feu documentées
+      - transfert de port en amont documenté si utilisé
+      - DDNS paramètre documenté si utilisé
+      - limitations connues enregistrées
+
+      ## Preuves à retenir
+
+      Voici quelques éléments de preuve utiles à cette note :
+
+      - Capture d'écran de l'interface WireGuard
+      - capture d'écran de configuration par les pairs avec clés cachées
+      - Capture d'écran de génération QR avec QR caché ou flou
+      - Sortie `wg show` avec les clés supprimées
+      - Capture d'écran de la règle de pare-feu
+      - transfert de port screenshot
+      - résultat du test de données mobiles
+      - Résultat du test DNS sur VPN
+      - LAN ping test sur VPN
+      - notes sur le paramètre/DDNS
+
+      ## Hypothèses techniques
+
+      Cette configuration suppose que le réseau a un chemin accessible depuis Internet vers le serveur WireGuard.
+
+      Si le FAI utilise le CGNAT ou si le trafic entrant est bloqué, il se peut que l'acheminement normal du port ne soit pas suffisant.
+
+      Il suppose également que les clients distants ne devraient pas avoir automatiquement un accès illimité à moins que cela ne soit délibérément configuré.
+
+      ## Principaux risques
+
+      - exposant les services de routeur/admin au lieu d'utiliser VPN
+      - partager un pair entre les appareils
+      - perdre les clés QR/privées
+      - permettant un accès interne trop large
+      - oubliant l'acheminement du routeur en amont
+      - En supposant que la poignée de main signifie que tout fonctionne
+      - CGNAT empêcher les connexions entrantes
+      - DNS échoue même lorsque le routage VPN fonctionne
+      - les changements d'IP ou de DDNS publics qui brisent le paramètre
+      - ne documente pas les règles du pare-feu
+
+      ## État actuel
+
+      WireGuard est une partie centrale de la direction d'accès à distance du réseau.
+
+      La valeur n'est pas seulement que le VPN se connecte. La valeur est qu'il crée un chemin de maintenance plus sûr pour les services et infrastructures locaux sans exposer tout publiquement.
+
+      Cette note se connecte directement à d'autres notes réseau telles que la configuration d'OpenWrt, AdGuard Home, DDNS et le transfert de port.
+
+      ## Ce que la présente note ne prétend pas
+
+      La présente note ne prétend pas que WireGuard est la seule méthode d'accès à distance valide.
+
+      Elle ne prétend pas que chaque service devrait être accessible via le VPN.
+
+      Il ne prétend pas que la configuration VPN supprime le besoin de planification de pare-feu.
+
+      C'est une note de champ sur l'utilisation de WireGuard comme une couche pratique d'accès à distance pour un réseau home/lab.
+
+      ## À emporter pratique
+
+      Une bonne configuration WireGuard n'est pas seulement des clés et un code QR.
+
+      Les éléments importants sont les suivants:
+
+      - un sous-net VPN clair
+      - un pair par appareil
+      - corriger les IP autorisées
+      - des règles de pare-feu correctes
+      - Essais externes
+      - paramètre documenté
+      - Exposition minimale du public
+      - un plan pour les questions relatives au CGNAT ou au routeur en amont
+
+      C'est ce qui rend le VPN utile au lieu de simplement installé techniquement.
 seoTitle: "WireGuard Remote Access Setup"
 seoDescription: "A practical note about setting up WireGuard remote access for a home or lab network with firewall rules, peer configuration, QR setup, and troubleshooting."
 ---

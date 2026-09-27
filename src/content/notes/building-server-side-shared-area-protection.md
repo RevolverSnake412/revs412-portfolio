@@ -17,6 +17,499 @@ date: "2026-07-08"
 updated: "2026-07-25"
 featured: true
 published: true
+translations:
+  fr:
+    title: "Mise en place d’une protection serveur des zones partagées"
+    category: "Extensions côté serveur"
+    summary: "Notes sur une extension côté serveur protégeant des zones partagées contre les modifications non autorisées tout en conservant les actions permises."
+    resumeSummary: >-
+      Développé une extension de protection côté serveur pour les zones partagées, conçue pour bloquer les
+      changements non autorisés sans empêcher l'utilisation légitime de l'environnement. La conception définit
+      les régions protégées, intercepte les événements de rupture, de placement et d'interaction, applique des
+      vérifications d'autorisation, envoie des commentaires de chat utiles, et gère les objets dépendants dont
+      le comportement est lié à un parent protégé. Il enregistre également les problèmes de construction et de
+      débogage rencontrés lors de l'affinage des règles, montrant comment l'autorisation axée sur les
+      événements doit tenir compte des cas de bord plutôt que de la seule action évidente.
+    body: |-
+
+      ## Pourquoi cette note existe
+
+      Cette note documente une extension personnalisée côté serveur construite pour protéger les zones partagées dans un service multi-utilisateurs.
+
+      L'objectif était d'empêcher toute modification sans restriction des zones partagées tout en préservant l'utilisation normale du service. La surface visible devait être protégée contre les abus et les dommages accidentels, tandis que la zone de travail inférieure restait disponible pour l'activité ordinaire.
+
+      La partie utile de ce projet n'était pas seulement l'écriture de code C#. Il traduisait une règle de comportement de service en un système fiable côté serveur.
+
+      ## contexte
+
+      Le serveur a utilisé ExtensionRuntime.
+
+      L'extension personnalisée a été créée dans le répertoire source ExtensionRuntime :
+
+      ```txt
+      /home/opc/tml-arm/ExtensionRuntime/ExtensionSources/SurfaceProtection
+      ```
+
+      L'extension a été construite sur le serveur en utilisant une commande en forme de:
+
+      ```bash
+      dotnet ExtensionRuntime.dll -build SurfaceProtection -tmlsavedirectory /home/opc/tml-arm/ExtensionRuntime
+      ```
+
+      Le chemin exact du serveur peut changer, mais la structure compte :
+
+      ```txt
+      ExtensionRuntime/
+        ExtensionSources/
+          SurfaceProtection/
+            SurfaceProtection.csproj
+            Common/
+              Systems/
+              GlobalTiles/
+              users/
+      ```
+
+      L'extension appartenait à la même configuration plus grande du serveur d'application qui impliquait ExtensionRuntime, hébergement ARM/Linux, configuration du serveur, construction d'extension, et application des règles de comportement de service.
+
+      ## Ce que cette extension signifie prouver
+
+      - Les règles du serveur peuvent être appliquées techniquement au lieu de s'appuyer uniquement sur la confiance
+      - extension côté serveurLa logique Runtime a besoin d'une gestion des objets soignée
+      - prévenir le chagrin peut créer des cas imprévus de comportement de service
+      - les zones protégées et les zones autorisées devraient être séparées clairement
+      - une règle doit être testée contre un comportement de service normal, non seulement des cas évidents
+      - développement d'extension personnalisée nécessite de débogage à la fois C# build erreurs et comportement de service
+      - La conception de serveur multijoueur est en partie la conception de logiciel et en partie la conception de comportement de service
+
+      ## Pioche et outils utilisés
+
+      ### développement de services et d'extension
+
+      - demande
+      - ExtensionRuntime
+      - C#
+      - ExtensionStructure de la source du temps
+      - crochets de niveau objet
+      - logique de retrait et de placement des objets
+      - chat utilisateur feedback
+
+      ### Calque du serveur
+
+      - Linux VPS
+      - Environnement ARM/Ampère
+      - `.NET` temps d'exécution
+      - Commande ExtensionRuntime build
+      - journaux des serveurs
+      - sortie de construction d'extension
+
+      ### comportement de service Rule Layer
+
+      - zone protégée
+      - Zone de travail autorisée
+      - modifier les restrictions
+      - manipulation d'exception d'objet
+      - comportement anti-grief
+      - exploiter les essais
+
+      ## Construction prévue
+
+      La construction prévue était une extension de règle côté serveur qui empêche les utilisateurs de modifier une zone protégée tout en préservant les actions autorisées ailleurs.
+
+      Une version terminée devrait :
+
+      - changement de bloc dans la zone protégée
+      - bloquer le placement d'objets non autorisés si nécessaire
+      - permettre des changements dans la zone de travail autorisée
+      - prévenir les utilisateurs lorsqu'une action est bloquée
+      - éviter les bugs de duplication des éléments
+      - éviter de bloquer l'utilisation normale du service
+      - se comporter de façon cohérente en multijoueur
+      - être facile à reconstruire et à redéployer après les changements de règles
+
+      ## Règle initiale
+
+      La première directive était :
+
+      ```txt
+      Protect the shared area from modification.
+      Allow changes in the permitted work area.
+      ```
+
+      Des exceptions antérieures ont été envisagées pour:
+
+      - objets dépendants sélectionnés
+      - objets portant des ressources
+      - marqueurs créés par l'utilisateur
+
+      Plus tard, la règle est devenue plus stricte:
+
+      ```txt
+      Prevent all placement in the protected area.
+      Keep the permitted work area available.
+      ```
+
+      Ce changement est important parce qu'un système de règles plus lâche a besoin de listes d'exception, tandis qu'un système de règles plus strict a besoin de moins d'exceptions mais peut affecter le comportement normal de construction plus.
+
+      ## Définition de zone protégée
+
+      La décision de conception la plus importante est la façon dont l'extension définit l'aire protégée.
+
+      Les données d'un service d'application ont plusieurs couches, et la limite exacte dépend des données de service.
+
+      La règle doit être vérifiée de manière cohérente, par exemple :
+
+      ```txt
+      if cellY is inside the protected-area threshold:
+          apply protection
+      else:
+          allow normal behavior
+      ```
+
+      Une mauvaise définition des limites peut causer des problèmes :
+
+      - les objets près de la frontière peuvent être protégés incorrectement
+      - les actions autorisées peuvent être bloquées
+      - les zones adjacentes peuvent être touchées de façon inattendue
+      - les différences de taille des données de service peuvent déplacer la limite de la règle
+      - les utilisateurs peuvent trouver des cas de bord autour du seuil
+
+      La limite doit être visible en code et facile à régler.
+
+      ## Logique d'interception du changement
+
+      La règle commence quand le service intercepte une tentative de changement.
+
+      L'extension doit intercepter les tentatives d'enlèvement d'objets et décider:
+
+      ```txt
+      Is this object in the protected area?
+        yes → block the action
+        no  → allow normal service behavior
+      ```
+
+      L'objectif pratique n'est pas seulement de bloquer le changement direct, mais aussi de prévenir les chutes, les effets secondaires et l'incohérence de l'état client.
+
+      L'action bloquée devrait être claire pour l'utilisateur.
+
+      Un message d'avertissement est utile:
+
+      ```txt
+      [Server] This area is protected. Use the permitted work area instead.
+      ```
+
+      ## Logique de placement des objets
+
+      Le placement des objets est également important.
+
+      Si la suppression est bloquée mais que le placement est autorisé, les utilisateurs peuvent encore modifier la zone protégée avec de nouveaux objets.
+
+      Une règle de protection de surface plus stricte devrait également bloquer la mise en place:
+
+      ```txt
+      if user tries to place an object in the protected area:
+          cancel placement
+          show message
+      ```
+
+      Cela évite les encombrements et maintient la zone partagée cohérente.
+
+      ## Clavardage
+
+      Le serveur doit indiquer aux utilisateurs pourquoi une action a échoué.
+
+      Un bloc silencieux ressemble à un lag ou un bug.
+
+      Le style de message souhaité était un avertissement sur le serveur, quelque chose comme :
+
+      ```txt
+      [Server] Surface editing is protected.
+      ```
+
+      L'objectif visuel était :
+
+      - Étiquette `[Server]`
+      - couleur lisible
+      - Pas trop de spammy
+      - suffisamment visibles pour expliquer la règle
+
+      Un comportement final utile devrait inclure une logique de limitation de vitesse ou de refroidissement afin que les utilisateurs ne soient pas spammés chaque tique tout en tenant un outil.
+
+      ## Construire et déboguer des erreurs
+
+      Plusieurs problèmes de construction/d'exécution sont apparus au cours du développement.
+
+      ### Nom manquant ou erreur de type
+
+      Un problème concernait un nom `SurfaceRules` manquant.
+
+      Cela signifie généralement:
+
+      - mauvais espace de noms
+      - classe non créée
+      - classe non importée avec `using`
+      - fichier non inclus dans le projet
+      - typo entre le nom de la classe et la référence
+
+      Direction pratique:
+
+      ```txt
+      check namespace
+      check class name
+      check file path
+      check using statements
+      rebuild cleanly
+      ```
+
+      ### Erreur d'opérateur non valide
+
+      Un autre problème consistait à comparer un booléen à un entier :
+
+      ```txt
+      bool > int
+      ```
+
+      Cela se produit habituellement lorsqu'une propriété ou une méthode renvoie `true/false`, mais le code le traite comme une valeur numérique.
+
+      Direction pratique:
+
+      ```txt
+      read the ExtensionRuntime API return type
+      do not guess from older examples
+      compare booleans as booleans
+      compare integers as integers
+      ```
+
+      ### FNA3D Problème de temps d'exécution
+
+      Un problème `FNA3D.so` est apparu pendant le chemin de construction serveur/extension.
+
+      Cela appartenait plus à l'environnement Linux et ExtensionRuntime que la logique de règle elle-même.
+
+      La leçon était:
+
+      ```txt
+      extension code errors and runtime/native library errors are different problems
+      ```
+
+      Ne pas déboguer le code de règle C# lorsque l'exécution ne peut pas charger une dépendance native requise.
+
+      ### Drop Override Type de retour
+
+      Une erreur de construction était:
+
+      ```txt
+      Drop(int, int, int) must return void
+      ```
+
+      Le membre dépassé attendait `void`, mais le code d'extension utilisait le mauvais type de retour.
+
+      C'est un problème courant ExtensionRuntime-version:
+
+      - exemples d'une autre version peuvent utiliser différentes signatures
+      - les méthodes de remplacement doivent correspondre exactement
+      - erreurs de compilateur sont souvent la meilleure documentation d'API pendant le développement d'extension
+
+      Direction pratique:
+
+      ```txt
+      match the exact method signature required by the installed ExtensionRuntime version
+      ```
+
+      ## Cas de bord d'objet dépendant
+
+      Un bug important impliquait un objet dépendant : il était attaché à un objet de base, mais les deux étaient traités par des chemins de changement séparés.
+
+      Lorsque l'interaction base-objet a été bloquée incorrectement, l'objet dépendant a pu produire un élément puis réapparaître.
+
+      Cela a montré que la protection n'est pas seulement l'objet que l'utilisateur cible directement. Le modèle de données peut inclure:
+
+      - objets de base et objets dépendants
+      - objets avec plusieurs cellules occupées
+      - objets qui déclenchent des chutes lorsqu'un objet lié change
+      - état visuel côté client qui doit être d'accord avec l'état du serveur
+
+      Bloquer un changement peut encore déclencher des effets secondaires ailleurs. La règle doit donc tester la relation complète, pas un objet isolé.
+
+      ## Prévention de l'exploitation
+
+      Une extension de protection ne doit pas créer de nouveau chemin de duplication.
+
+      Un bon test devrait vérifier:
+
+      - si une action bloquée change un objet dépendant
+      - si un élément est créé sans le changement d'état attendu
+      - si le même élément peut être créé à plusieurs reprises
+      - si l'état du serveur correspond aux visuels du client
+      - si des actions répétées produisent des résultats incohérents
+
+      La règle devrait empêcher les deux :
+
+      ```txt
+      unauthorised shared-area modification
+      and
+      unearned item drops
+      ```
+
+      Si une action bloquée crée encore des gouttes, la protection est incomplète.
+
+      ## Liste de vérification
+
+      Une épreuve pratique devrait comprendre:
+
+      ### Changements dans les zones protégées
+
+      - essayer de supprimer les objets de base
+      - essayer de supprimer les objets dépendants
+      - essayer de changer les objets près de la frontière
+      - essayer de modifier les objets créés par l'utilisateur
+      - essayer de changer les objets décoratifs
+
+      ### Positionnement de l'objet
+
+      - essayer de placer des objets ordinaires
+      - essayer de placer des objets multicellules
+      - essayer de placer des objets adjacents à des objets protégés
+
+      ### Comportement de zone autorisée
+
+      - effectuer des changements ordinaires dans la zone autorisée
+      - placer et enlever les objets ordinaires
+      - confirmer l'utilisation normale du service fonctionne toujours
+
+      ### Comportement multijoueur
+
+      - test en tant qu'utilisateur normal
+      - test en tant qu'administrateur s'il existe un contournement d'administrateur
+      - test répété clic rapide
+      - test avec plusieurs utilisateurs à proximité
+      - vérifier les journaux du serveur
+      - vérifier l'inadéquation de l'état client/serveur
+
+      ### Exploiter le comportement
+
+      - objets dépendants de l'essai
+      - changement de base-objet
+      - chute d'essai
+      - Tester les actions bloquées répétées
+      - tester des objets multicellules
+
+      ## Décisions pratiques
+
+      ### Gardez les règles côté serveur
+
+      les utilisateurs ne devraient pas pouvoir contourner la règle en modifiant leur client.
+
+      ### Maintenir le comportement autorisé normal
+
+      Le serveur a encore besoin de progression. Bloquer trop fait que les données du service se sentent cassées.
+
+      ### Blocage et rupture
+
+      Si la protection arrête seulement l'enlèvement, les utilisateurs peuvent toujours modifier la zone par le placement.
+
+      ### Éviter de trop nombreuses exceptions
+
+      Une règle plus stricte est plus facile à raisonner.
+
+      ### Tester les relations entre les objets dépendants
+
+      Le service a des objets dépendants. La protection d'un objet peut affecter un autre.
+
+      ### Afficher les commentaires aux utilisateurs
+
+      Une action bloquée devrait s'expliquer.
+
+      ## Ce qu'une extension terminée devrait montrer
+
+      Une version terminée forte devrait montrer:
+
+      - propre ExtensionRuntime structure du projet
+      - règle de zone protégée isolée dans le code lisible
+      - protection contre la rupture
+      - lieu de protection
+      - Allocation de surface autorisée
+      - message d'avertissement de l'utilisateur
+      - Pas de spam de chat répété
+      - aucune voie de duplication dépendante-objet
+      - commande build réussie
+      - confirmation de chargement du serveur
+      - test multijoueur
+      - des points de configuration clairs si la règle nécessite un réglage
+
+      ## Preuves à retenir
+
+      Voici quelques éléments de preuve utiles à cette note :
+
+      - Capture d'écran du dépôt d'extension
+      - Arbre source `SurfaceProtection`
+      - build commande output
+      - construction réussie d'extension
+      - serveur chargeant l'extension
+      - Essai de changement de zone protégée bloqué
+      - Essai de changement de zone autorisé
+      - Essai de placement dans une zone protégée bloquée
+      - chat avertissement capture d'écran
+      - avant/après les preuves de bogue d'objet dépendant
+      - Essai final de fixation de l'exploitation
+      - messages d'erreur pertinents et corrections
+
+      ## Hypothèses techniques
+
+      Cette note suppose que l'extension fonctionne dans un environnement ExtensionRuntime.
+
+      Il suppose que l'application côté serveur est possible grâce aux crochets de niveau objet pertinents disponibles dans la version ExtensionRuntime installée.
+
+      Elle suppose que la règle de la zone protégée s'applique à un service privé ou communautaire ayant un but opérationnel défini.
+
+      ## Principaux risques
+
+      - Mauvaise version de l'API ExtensionRuntime
+      - les signatures de remplacement copiées à partir d'exemples dépassés
+      - seuil trop strict ou trop lâche
+      - bloquer les objets mais toujours permettre les gouttes
+      - client/serveur désync
+      - chat avertissement spam
+      - bloquant accidentellement l'utilisation autorisée du service
+      - permettant un placement indésirable tout en bloquant uniquement l'enlèvement
+      - listes d'exception fragiles
+      - testant un seul type d'objet et manquant un comportement dépendant-objet
+
+      ## État actuel
+
+      Cette note représente la direction d'extension de protection de surface personnalisée.
+
+      La leçon la plus importante a été qu'une règle simple — de protéger cette zone — devient plus complexe lorsqu'elle est traduite dans le modèle d'objet du service.
+
+      Le vrai travail n'était pas seulement de bloquer une action. Il s'agissait de s'assurer que l'action bloquée ne créait pas d'effets secondaires, d'exploitations ou de confusion du comportement de l'utilisateur.
+
+      ## Ce que la présente note ne prétend pas
+
+      La présente note ne prétend pas que l'extension soit un système anti-chaleur général.
+
+      Il ne prétend pas résoudre toutes les méthodes de deuil possibles.
+
+      Il ne prétend pas être un public poli ExtensionRuntime.
+
+      Il documente une extension de serveur personnalisée pratique construite pour une règle de service multi-utilisateurs spécifique.
+
+      ## À emporter pratique
+
+      L'option utile est :
+
+      > Une règle serveur n'est fiable que lorsqu'elle est appliquée en code, testée contre les cas de bord, et vérifiée pour les effets secondaires.
+
+      Pour cette extension, les parties importantes étaient:
+
+      - définir clairement la zone protégée
+      - bloc suppression non autorisée
+      - bloc placement non autorisé
+      - préserver les actions autorisées ailleurs
+      - prévenir clairement les utilisateurs
+      - correspondre à l'API ExtensionRuntime installée
+      - test des relations dépendantes-objets
+      - empêcher les exploits de chute d'article
+
+      Cela en fait une vraie note de comportement de service-systèmes, pas seulement une petite extension C#.
 seoTitle: "Building Server-Side Shared-Area Protection"
 seoDescription: "A practical note about building a server-side extension that enforces shared-area protection, handles build errors, and accounts for operational edge cases."
 ---

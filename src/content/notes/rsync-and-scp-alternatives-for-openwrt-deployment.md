@@ -21,6 +21,751 @@ date: "2026-07-06"
 updated: "2026-07-25"
 featured: true
 published: true
+translations:
+  fr:
+    title: "Alternatives à rsync et SCP pour déployer sur OpenWrt"
+    category: "Déploiement"
+    summary: "Notes sur le déploiement de petits services OpenWrt avec SCP, tar via SSH, Git pull et scripts simples lorsque rsync est indisponible ou peu fiable."
+    resumeSummary: >-
+      Méthodes de déploiement légères documentées pour les périphériques OpenWrt lorsque rsync est
+      indisponible, peu fiable ou trop lourd pour la cible. Les alternatives incluent SCP avec mode de
+      compatibilité, archives de tar en streaming sur SSH, flux de téléchargement et d'extraction, Git tirer
+      sur l'appareil, et copier seulement des artefacts d'exécution construits ailleurs. Chaque méthode est
+      encadrée autour du stockage de routeur limité, CPU, disponibilité de paquets, et les besoins de
+      récupération, donnant aux petits services un chemin de déploiement répétable sans supposer une chaîne
+      d'outils Linux-serveur complète.
+    body: |-
+
+      ## Pourquoi cette note existe
+
+      Déployer du code vers OpenWrt est différent du déploiement vers un serveur Linux normal.
+
+      OpenWrt est petit, axé sur le routeur, et parfois des outils manquants qui sont standard sur les grandes distributions. Même lorsqu'un outil existe, l'implémentation, le comportement SSH, la mise en page du système de fichiers, ou l'environnement peut se comporter différemment.
+
+      Cette note documente des alternatives de déploiement pratiques pour les petits services hébergés par OpenWrt lorsque `rsync` n'est pas fiable ou ne vaut pas la peine de se battre.
+
+      L'objectif est simple :
+
+      ```txt
+      edit code locally
+      send it to OpenWrt
+      restart the service cleanly
+      verify it is running
+      ```
+
+      Ce flux de travail compte plus qu'un outil de synchronisation spécifique.
+
+      ## Contexte du projet
+
+      La cible de déploiement était un dispositif OpenWrt utilisé pour les petits services et scripts.
+
+      L'environnement comprenait:
+
+      - Raspberry Pi fonctionne OpenWrt
+      - Accès SSH depuis un poste de travail
+        - Services d'automatisation Node.js
+      - Direction du service basée sur Docker
+      - direction de service de procd
+      - fichiers placés sous `/opt`
+      - Fichiers d'environnement de style `.env.local`
+      - besoin de scripts répétables build/run/restart
+
+      Un chemin cible typique ressemblait à :
+
+      ```txt
+      /opt/discord-bots/<service-name>
+      ```
+
+      Le principal problème était que `rsync` n'était pas toujours fiable dans la pratique, même lorsqu'il était installé sur les deux machines.
+
+      Cela a rendu utile d'avoir des méthodes de déploiement de repli.
+
+      ## Ce que cette note veut prouver
+
+      - le déploiement doit être répétable même en cas de panne d'un outil
+      - OpenWrt nécessite des flux de travail plus simples et plus explicites
+      - SCP peut suffire pour les petits services
+      - tar over SSH est un fort recul pour les dossiers entiers
+      - Git pull peut fonctionner lorsque le routeur a accès et des identifiants
+      - les scripts de déploiement réduisent les erreurs manuelles
+      - redémarrage et vérification du service font partie du déploiement
+      - synchroniser les fichiers n'est pas le même que déployer un service
+
+      ## Outils et méthodes utilisés
+
+      ### Accès à distance
+
+      - SSH
+      - Client OpenSSH
+      - Serveur/dropbear OpenWrt SSH ou direction OpenSSH
+      - commandes shell distantes
+
+      ### Transfert de fichiers
+
+      - `scp`
+      - mode SCP historique au besoin
+      - `tar` sur SSH
+      - téléchargement manuel retour
+      - option `sftp` si disponible
+
+      ### Synchronisation/déploiement
+
+      - `rsync` lors du travail
+      - Git tirer le flux de travail
+      - Reconstruction/redémarrage de Docker
+      - redémarrage procd
+      - scripts shell simples
+
+      ### Voies de service
+
+      - `/opt/discord-bots/`
+      - `/etc/init.d/`
+      - `.env.local`
+      - `package.json`
+      - `src/`
+      - scripts de déploiement
+
+      ## Construction prévue
+
+      Le flux de travail de déploiement prévu est :
+
+      ```txt
+      local project folder
+        ↓
+      copy/sync files to OpenWrt
+        ↓
+      install/update dependencies if needed
+        ↓
+      restart service
+        ↓
+      check logs/status
+      ```
+
+      Un workflow terminé devrait permettre :
+
+      - une commande pour télécharger le projet
+      - une commande à redémarrer
+      - une commande pour afficher les journaux
+      - chute nette lorsque rsync échoue
+      - pas de copier-coller manuel de nombreux fichiers
+      - pas d'écrasement accidentel des secrets
+      - pas de confusion entre construire, exécuter et redémarrer
+
+      ## Pourquoi Rsync peut échouer sur OpenWrt
+
+      `rsync` est normalement excellent, mais OpenWrt peut créer des frictions.
+
+      Problèmes éventuels:
+
+      - `rsync` manquant de chaque côté
+      - différentes constructions/options `rsync`
+      - Différences entre les sous-systèmes SSH
+      - chemin citant les problèmes de Windows
+      - questions d'autorisation
+      - différences d'environnement de la coque distante
+      - différences entre la boîte occupée/coreutils
+      - sous-système SFTP cassé ou non disponible
+      - anciens fichiers appartenant à un mauvais utilisateur
+      - problèmes de stockage ou de superposition du routeur
+      - connexion instable
+
+      Une erreur comme :
+
+      ```txt
+      rsync error: unexplained error (code 12)
+      ```
+
+      peut venir d'une défaillance de démarrage distante-shell/protocole, pas nécessairement un conflit de fichiers normal.
+
+      Lorsque l'outil lui-même devient le problème, la méthode de commutation est souvent plus rapide.
+
+      ## Méthode 1: Téléchargement du dossier SCP
+
+      Pour les petits projets, le SCP suffit souvent.
+
+      Exemple de direction:
+
+      ```bash
+      scp -r ./project root@192.168.1.1:/opt/discord-bots/project
+      ```
+
+      Si la destination existe déjà, elle peut fusionner ou écraser les fichiers selon la structure.
+
+      Pour un déploiement plus propre, téléchargez d'abord dans un dossier temporaire :
+
+      ```bash
+      scp -r ./project root@192.168.1.1:/tmp/project-upload
+      ```
+
+      Puis le déplacer sur le routeur après l'avoir vérifié.
+
+      SCP n'est pas aussi intelligent que rsync, mais c'est simple.
+
+      ## Mode SCP hérité
+
+      Certaines configurations OpenWrt se comportent mieux avec le mode SCP.
+
+      Sur les nouveaux clients OpenSSH, SCP peut utiliser le comportement SFTP par défaut. Si le serveur distant ne supporte pas le comportement SFTP attendu, le transfert peut échouer.
+
+      Un retour utile est:
+
+      ```bash
+      scp -O -r ./project root@192.168.1.1:/opt/discord-bots/project
+      ```
+
+      Le drapeau `-O` force le comportement du protocole SCP.
+
+      Cela peut aider lorsque SSH fonctionne mais le transfert de fichiers échoue en raison des problèmes de sous-système SFTP.
+
+      ## Méthode 2: Tar sur SSH
+
+      Pour le déploiement d'un dossier entier, le goudron sur SSH est un recul important.
+
+      Au lieu de copier des milliers de fichiers un par un, créez un flux de goudron localement et extraitz-le à distance.
+
+      Exemple de direction:
+
+      ```bash
+      tar -czf - ./project | ssh root@192.168.1.1 "mkdir -p /opt/discord-bots && tar -xzf - -C /opt/discord-bots"
+      ```
+
+      Cette méthode est utile car:
+
+      - il utilise SSH
+      - il ne nécessite pas rsync
+      - il préserve la structure du dossier
+      - il est efficace pour de nombreux petits fichiers
+      - il évite la dépendance SFTP
+
+      Une version plus propre peut tarir le contenu au lieu du dossier parent en fonction du résultat souhaité.
+
+      ## Méthode 3: Télécharger des archives, puis extraire
+
+      Une autre méthode sûre est:
+
+      ```bash
+      tar -czf project.tar.gz ./project
+      scp project.tar.gz root@192.168.1.1:/tmp/project.tar.gz
+      ssh root@192.168.1.1 "mkdir -p /opt/discord-bots && tar -xzf /tmp/project.tar.gz -C /opt/discord-bots && rm /tmp/project.tar.gz"
+      ```
+
+      C'est un peu plus lent mais plus facile à inspecter.
+
+      Il donne également un artefact temporaire que vous pouvez réessayer ou vérifier.
+
+      ## Méthode 4: Tir sur routeur
+
+      Si Git est installé et que la repo est accessible depuis le routeur, le déploiement peut être :
+
+      ```bash
+      ssh root@192.168.1.1 "cd /opt/discord-bots/project && git pull"
+      ```
+
+      C'est propre quand:
+
+      - le service est déjà cloné
+      - les références sont traitées en toute sécurité
+      - le routeur peut atteindre GitHub
+      - la repo ne contient pas de secrets
+      - la branche est contrôlée
+
+      Mais Git sur un routeur a des compromis :
+
+      - besoins de stockage
+      - besoin de travail réseau/DNS
+      - Besoins de justificatifs ou de clé de déploiement
+      - peut accidentellement tirer des modifications non testées
+      - pas idéal pour les repos privés sans mise en place de clé prudente
+
+      Git pull est bon pour les workflows personnels contrôlés, mais pas toujours la meilleure méthode de premier déploiement.
+
+      ## Méthode 5 : Construire localement, copier uniquement les fichiers d'exécution
+
+      Pour les services Node.js, copier la repo complète à chaque fois peut être inutile.
+
+      Un déploiement ne peut copier que :
+
+      ```txt
+      package.json
+      package-lock.json
+      src/
+      .env.example
+      Dockerfile
+      scripts/
+      ```
+
+      Mais évitez de copier :
+
+      ```txt
+      node_modules/
+      .git/
+      logs/
+      temporary files
+      real secrets
+      ```
+
+      Si Docker est utilisé sur OpenWrt, le routeur peut construire l'image localement, ou l'image peut être construite ailleurs selon l'architecture et le flux de travail.
+
+      Pour les petits appareils OpenWrt, les constructions locales peuvent être plus lentes.
+
+      ## Méthode 6 : Envoi manuel d'urgence
+
+      Un mauvais retour, mais parfois utile:
+
+      ```txt
+      copy one changed file with scp
+      restart service
+      test
+      ```
+
+      Exemple :
+
+      ```bash
+      scp ./src/index.js root@192.168.1.1:/opt/discord-bots/project/src/index.js
+      ```
+
+      Ce n'est pas un processus de déploiement propre, mais il est utile lors du débogage d'urgence.
+
+      Il ne devrait pas devenir le flux normal de travail.
+
+      ## Direction du script de déploiement
+
+      Un meilleur workflow est d'envelopper les commandes dans les scripts.
+
+      Exemple de commandes de script :
+
+      ```txt
+      deploy
+      restart
+      logs
+      status
+      stop
+      start
+      rebuild
+      clean
+      help
+      ```
+
+      Pour un service basé sur Docker:
+
+      ```txt
+      deploy → upload files
+      rebuild → docker build
+      restart → stop/remove old container, run new one
+      logs → docker logs
+      status → docker ps
+      ```
+
+      Pour un service de procd:
+
+      ```txt
+      deploy → upload files
+      restart → /etc/init.d/service restart
+      logs → logread
+      status → /etc/init.d/service status
+      ```
+
+      L'implémentation exacte peut changer, mais le workflow orienté vers l'utilisateur doit rester simple.
+
+      ## Débit de déploiement de Docker
+
+      Un service OpenWrt basé sur Docker pourrait utiliser:
+
+      ```txt
+      Dockerfile
+      .env.local
+      package.json
+      src/
+      ```
+
+      Un flux pratique:
+
+      ```txt
+      upload project
+      docker build image
+      stop old container
+      remove old container
+      run new container with --env-file
+      check logs
+      ```
+
+      La distinction importante:
+
+      ```txt
+      building an image does not automatically restart the running container
+      ```
+
+      Une erreur courante est de construire une nouvelle image mais de laisser l'ancien conteneur tourner.
+
+      Le script de déploiement devrait rendre cela explicite.
+
+      ## débit de déploiement
+
+      Pour les services OpenWrt natifs, procd est le gestionnaire de service.
+
+      Un débit peut être:
+
+      ```txt
+      upload project files
+      upload /etc/init.d/service file if needed
+      chmod +x service file
+      enable service
+      restart service
+      check logread
+      ```
+
+      Commandes utiles :
+
+      ```bash
+      /etc/init.d/service restart
+      /etc/init.d/service status
+      logread -f
+      ```
+
+      procd est plus OpenWrt-native que Docker et peut être plus léger pour les petits scripts Node si les dépendances sont déjà disponibles.
+
+      ## Fichiers Environnement
+
+      Les secrets et les variables d'environnement doivent être traités avec soin.
+
+      Un schéma commun:
+
+      ```txt
+      .env.example committed
+      .env.local kept private
+      ```
+
+      Déployer `.env.local` uniquement au routeur si le service en a besoin.
+
+      Ne pas commettre de vrais jetons.
+
+      Ne pas écraser `.env.local` accidentellement pendant le déploiement, sauf si cela est prévu.
+
+      Les scripts de déploiement doivent :
+
+      - sauter `.env.local`
+      - télécharger depuis un chemin privé connu
+      - vérifier qu'il existe avant le redémarrage
+
+      ## Hors fichiers
+
+      Même sans rsync, le déploiement devrait éviter de copier des fichiers inutiles.
+
+      Exclusions courantes:
+
+      ```txt
+      .git/
+      node_modules/
+      dist/
+      logs/
+      *.log
+      .env
+      .env.local if handled separately
+      .DS_Store
+      ```
+
+      Avec le tar, les exclusions peuvent être passées à la commande tar.
+
+      Exemple de direction:
+
+      ```bash
+      tar --exclude='.git' --exclude='node_modules' --exclude='*.log' -czf - .
+      ```
+
+      Cela garde le déploiement plus petit et évite les fuites de déchets locaux.
+
+      ## Vérification après déploiement
+
+      Le déploiement n'est pas effectué lorsque les fichiers sont copiés.
+
+      Vérifier :
+
+      ```txt
+      service is running
+      logs look clean
+      service is online
+      expected command/feature works
+      old code is not still running
+      environment file loaded
+      network access works
+      ```
+
+      Contrôles utiles:
+
+      ```bash
+      ssh root@192.168.1.1 "ps | grep node"
+      ```
+
+      ```bash
+      ssh root@192.168.1.1 "docker ps"
+      ```
+
+      ```bash
+      ssh root@192.168.1.1 "logread | tail -50"
+      ```
+
+      ```bash
+      ssh root@192.168.1.1 "docker logs --tail 50 service-name"
+      ```
+
+      ## Commandes pratiques unilignes
+
+      Pour copier/coller les workflows, les commandes en une ligne sont plus faciles.
+
+      Exemple de déploiement tar-over-SSH :
+
+      ```bash
+      tar --exclude='.git' --exclude='node_modules' --exclude='*.log' -czf - . | ssh root@192.168.1.1 "mkdir -p /opt/discord-bots/project && tar -xzf - -C /opt/discord-bots/project"
+      ```
+
+      Exemple de PCD hérité :
+
+      ```bash
+      scp -O -r ./src ./package.json ./Dockerfile root@192.168.1.1:/opt/discord-bots/project/
+      ```
+
+      Exemple de redémarrage à distance :
+
+      ```bash
+      ssh root@192.168.1.1 "/etc/init.d/project restart && logread | tail -50"
+      ```
+
+      Exemple de redémarrage Docker :
+
+      ```bash
+      ssh root@192.168.1.1 "cd /opt/discord-bots/project && docker build -t project:latest . && docker rm -f project 2>/dev/null || true && docker run -d --name project --env-file .env.local --restart unless-stopped project:latest && docker logs --tail 50 project"
+      ```
+
+      Le nom exact du service doit être remplacé par le nom réel du projet.
+
+      ## Points communs de défaillance
+
+      ### Fichiers téléchargés mais le service fonctionne toujours Ancien code
+
+      Causes probables:
+
+      - service non redémarré
+      - Image Docker reconstruite mais conteneur non recréé
+      - fichiers copiés sur un mauvais chemin
+      - plusieurs dossiers de projets existent
+      - points de service vers un autre répertoire
+      - ancien processus toujours en cours
+
+      ### SCP fonctionne mais rsync fails
+
+      Causes probables:
+
+      - problème de démarrage du protocole rsync
+      - Inadéquation SFTP/sous-système
+      - problème de chemin rsync distant
+      - problème de coquillage
+      - délivrance des autorisations
+      - Inadéquation du paquet/outil OpenWrt
+
+      Utiliser le SCP ou le tar-over-SSH au lieu de perdre du temps.
+
+      ### Le déploiement écrase les secrets
+
+      Causes probables:
+
+      - copie locale `.env.local`
+      - suppression complète du dossier distant
+      - archive comprend des fichiers secrets
+      - Pas de liste d'exclusion
+      - aucune sauvegarde avant le déploiement propre
+
+      Gérez les secrets séparément.
+
+      ### Docker construire fonctionne mais Bot ne commence pas
+
+      Causes probables:
+
+      - fichier env manquant
+      - mauvaise commande
+      - mauvais répertoire de travail
+      - conflit ancien nom de conteneur
+      - problème de mode réseau
+      - inadéquation de l'architecture
+      - jeton invalide
+      - temps du système/question de certificat
+
+      Vérifier les journaux, pas seulement construire la sortie.
+
+      ### Confusion de chemins éloignés
+
+      Causes probables:
+
+      - déploie `/tmp` mais le service lit `/opt`
+      - le fichier de service pointe vers l'ancien dossier
+      - copier le dossier imbriqué créé accidentellement
+      - chemins relatifs changés
+
+      Vérifiez toujours avec:
+
+      ```bash
+      ssh root@192.168.1.1 "pwd; ls -la /opt/discord-bots/project"
+      ```
+
+      ## Modèle de déploiement plus sûr
+
+      Un modèle plus sûr est :
+
+      ```txt
+      upload to temporary folder
+      backup current folder
+      replace folder
+      restart service
+      check logs
+      rollback if broken
+      ```
+
+      Exemple de direction:
+
+      ```txt
+      /opt/discord-bots/project
+      /opt/discord-bots/project.prev
+      /tmp/project-upload
+      ```
+
+      Cela donne un chemin basique de recul.
+
+      Pour les petits services, cela peut suffire.
+
+      ## Quand Rsync vaut toujours la peine d'utiliser
+
+      `rsync` est toujours utile lorsque:
+
+      - Les deux côtés le soutiennent proprement
+      - le projet a de nombreux fichiers
+      - Seuls les petits changements doivent être copiés
+      - Les exclusions sont importantes
+      - la bande passante est limitée
+      - le déploiement a besoin de supprimer-sync comportement
+
+      Mais il ne doit pas être traité comme obligatoire.
+
+      Si `scp` ou tar-over-SSH résout le problème de façon fiable, c'est un choix de déploiement valide.
+
+      ## Décisions pratiques
+
+      ### Préférez la fiabilité plutôt que la préférence de l'outil
+
+      Le but est le déploiement, sans prouver que `rsync` fonctionne.
+
+      ### Gardez les commandes scriptables
+
+      Les commandes manuelles de copie sont correctes une fois.
+
+      ### Téléchargement séparé du redémarrage
+
+      Il devrait être clair si une commande copie uniquement des fichiers ou redémarre réellement le service.
+
+      ### Vérifier après chaque déploiement
+
+      Les journaux et les vérifications d'état devraient faire partie du flux de travail.
+
+      ### Protéger les secrets
+
+      N'archivez pas aveuglément et téléchargez tout.
+
+      ### Garder la lumière ouverte
+
+      Si le routeur est le point de contrôle du réseau, évitez de transformer le déploiement en infrastructure de construction lourde.
+
+      ## Ce qu'un flux de travail fini devrait montrer
+
+      Un fort flux de travail de déploiement devrait montrer :
+
+      - chemin choisi pour le projet sous `/opt`
+      - une commande pour déployer des fichiers
+      - une commande pour redémarrer le service
+      - une commande pour afficher les journaux
+      - clairement exclus
+      - `.env.local` manipulé en toute sécurité
+      - Comportement Docker/procd documenté
+      - recul si rsync échoue
+      - étape de vérification
+      - direction inverse pour les petits services
+
+      ## Preuves à retenir
+
+      Voici quelques éléments de preuve utiles à cette note :
+
+      - sortie d'erreur rsync échouée
+      - commande SCP de travail
+      - commande tar-over-SSH de travail
+      - script de déploiement
+      - avant/après la liste des fichiers
+      - sortie de redémarrage de service
+      - `docker ps` ou statut procd
+      - journaux après déploiement
+      - mise en page du répertoire sous `/opt`
+      - Instructions d'utilisation README
+
+      ## Hypothèses techniques
+
+      Cette note suppose que le périphérique cible est OpenWrt et accessible sur SSH.
+
+      Il suppose que le service est suffisamment petit pour que le SCP ou le Tar-over-SSH soit pratique.
+
+      Il suppose également que la cible de déploiement est contrôlée par l'opérateur, comme un routeur autogéré ou un appareil interne.
+
+      ## Principaux risques
+
+      - copier des fichiers sur le mauvais chemin
+      - écraser les secrets
+      - redémarrer le mauvais service
+      - construire une image Docker mais ne pas recréer le conteneur
+      - laissant tourner les anciens processus
+      - utilisant `/tmp` pour les fichiers de service persistants
+      - en supposant que le téléchargement de SCP égale le déploiement
+      - Pas de recul
+      - aucun journal vérifié après le redémarrage
+      - constructions lourdes affectant la stabilité du routeur
+
+      ## État actuel
+
+      Cette note représente un flux de travail pratique pour les services hébergés par OpenWrt.
+
+      La valeur principale est d'avoir plusieurs façons fiables de déplacer le code lorsque `rsync` ne se comporte pas:
+
+      - SCP
+      - L'héritage du SCP
+      - goudron sur SSH
+      - télécharger l'archive puis extraire
+      - Tirer
+      - scripted deploy/restart/logs
+
+      Il en résulte un flux de travail plus résistant pour les petits services.
+
+      ## Ce que la présente note ne prétend pas
+
+      Cette note ne prétend pas que `rsync` est mauvais.
+
+      Il ne prétend pas qu'OpenWrt devrait être utilisé comme un serveur d'application lourde.
+
+      Il ne prétend pas que ces méthodes remplacent le CI/CD approprié pour les systèmes plus grands.
+
+      Il documente des alternatives pratiques pour les petits déploiements OpenWrt où des commandes simples, fiables, répétables comptent plus qu'une plateforme de déploiement parfaite.
+
+      ## À emporter pratique
+
+      La leçon utile est:
+
+      > Le flux de travail de déploiement devrait survivre à l'échec de l'outil.
+
+      Si `rsync` échoue, le travail peut continuer avec :
+
+      ```txt
+      scp
+      scp -O
+      tar over SSH
+      archive upload
+      git pull
+      scripted restart
+      ```
+
+      Pour les petits services OpenWrt, un flux de déploiement fiable ennuyeux est meilleur qu'un flux fragile.
 seoTitle: "Rsync and SCP Alternatives for OpenWrt Deployment"
 seoDescription: "A practical note about deploying small services to OpenWrt using SCP, tar over SSH, Git pull, and simple scripts when rsync is unreliable or unavailable."
 ---

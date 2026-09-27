@@ -21,6 +21,634 @@ date: "2025-11-14"
 updated: "2026-07-25"
 featured: true
 published: true
+translations:
+  fr:
+    title: "CGNAT et limites de l’auto-hébergement"
+    category: "Réseau"
+    summary: "Notes expliquant l’effet du CGNAT sur l’auto-hébergement, la redirection de port, les analyses d’adresses publiques partagées et les alternatives pratiques."
+    resumeSummary: >-
+      Il distingue une adresse WAN routeur d'une adresse publique véritablement routable, explique pourquoi
+      l'envoi de port et les tests locaux peuvent apparaître corrects alors que l'accès externe échoue, et
+      montre ce que les scans révèlent lorsque plusieurs clients partagent une IP publique. La note évalue des
+      alternatives réalistes, y compris l'accès basé sur VPN, les tunnels inversés, les relais et les
+      terminaux hébergés, tout en précisant que le DNS dynamique ne peut pas surmonter CGNAT par lui-même.
+    body: |-
+
+      ## Pourquoi cette note existe
+
+      Cette note explique l'un des problèmes les plus courants dans les infrastructures autogérées : la différence entre avoir accès à Internet et être accessible depuis Internet.
+
+      Un routeur d'origine peut accéder au web normalement tout en restant impossible à atteindre de l'extérieur. Cela arrive souvent à cause de CGNAT.
+
+      CGNAT modifie la façon dont le transfert de port fonctionne, comment les adresses IP publiques se comportent et comment il est réaliste d'accueillir des services publics, des VPN, des applications Web ou des outils d'administration à distance à partir d'un réseau privé.
+
+      Cette note est écrite dans la perspective du dépannage pratique: ce qui se passe, comment le tester, et quelles options existent lorsque l'hébergement entrant est bloqué.
+
+      ## Ce que signifie CGNAT
+
+      CGNAT signifie Carrier-Grade NAT.
+
+      Avec le NAT normal, la disposition est généralement:
+
+      ```txt
+      Internet
+        ↓
+      Public IP on home router
+        ↓
+      Private LAN devices
+      ```
+
+      Avec CGNAT, la disposition devient :
+
+      ```txt
+      Internet
+        ↓
+      ISP public IP
+        ↓
+      ISP NAT layer
+        ↓
+      Customer private/CGNAT address
+        ↓
+      Home router
+        ↓
+      Private LAN devices
+      ```
+
+      La différence importante est que l'IP public n'est pas directement assigné au routeur client.
+
+      Le FAI possède la couche NAT orientée vers le public, et plusieurs clients peuvent apparaître derrière la même adresse publique.
+
+      ## Pourquoi CGNAT rompt le transfert de port
+
+      Le transfert de port ne fonctionne que lorsque le routeur qui reçoit le trafic public peut le transmettre au dispositif interne.
+
+      Dans une configuration normale:
+
+      ```txt
+      WAN public IP:25565
+        ↓
+      home router port forward
+        ↓
+      public service
+      ```
+
+      En CGNAT:
+
+      ```txt
+      WAN public IP:25565
+        ↓
+      ISP NAT layer
+        ↓
+      customer router
+        ↓
+      home server
+      ```
+
+      Le client peut configurer le transfert de port sur son propre routeur, mais il ne peut pas configurer la couche NAT ISP.
+
+      Ainsi, le trafic entrant n'atteint jamais le routeur client à moins que le FAI ait créé une cartographie pour ce client.
+
+      C'est pourquoi un port peut être transmis correctement sur OpenWrt et apparaît toujours fermé de l'extérieur.
+
+      ## IP public vs Routeur IP WAN
+
+      Un simple contrôle CGNAT compare:
+
+      ```txt
+      public IP shown by an external website
+      ```
+
+      avec:
+
+      ```txt
+      WAN IP shown on the router
+      ```
+
+      S'ils ne correspondent pas, et que le routeur WAN est dans une gamme privée ou CGNAT, alors l'auto-hébergement entrant est probablement bloqué.
+
+      Plages privées communes:
+
+      ```txt
+      10.0.0.0/8
+      172.16.0.0/12
+      192.168.0.0/16
+      ```
+
+      Plage commune de CGNAT:
+
+      ```txt
+      100.64.0.0/10
+      ```
+
+      Si le routeur WAN IP est quelque chose comme `100.64.x.x`, cela suggère fortement CGNAT.
+
+      ## Comportement public partagé en matière de propriété intellectuelle
+
+      Sous CGNAT, plusieurs clients peuvent partager la même IP publique.
+
+      Cela crée une question commune:
+
+      ```txt
+      If two customers share the same public IP and both want to host the same port, what happens?
+      ```
+
+      La réponse est que la couche NAT ISP décide quel client interne obtient quel mapping public.
+
+      Deux clients ne peuvent pas recevoir en même temps le même IP public et le même port public via le même dispositif NAT.
+
+      Un besoin de cartographie unique en son genre :
+
+      ```txt
+      public IP
+      public port
+      internal customer/session mapping
+      ```
+
+      Si le FSI ne crée pas cette cartographie, aucun des clients ne reçoit de trafic entrant non sollicité.
+
+      ## Exemple : Deux services publics derrière le CGNAT
+
+      Imaginez deux clients derrière la même IP publique ISP.
+
+      Les deux veulent accueillir:
+
+      ```txt
+      102.x.x.x:25565
+      ```
+
+      Depuis Internet, c'est une adresse et un port.
+
+      L'ISP NAT ne peut pas envoyer le même paquet entrant aux deux clients.
+
+      Résultats possibles:
+
+      - le port n'est pas transmis à aucun client
+      - le FAI map que le port public à un client spécifique
+      - le FAI cartographie différents ports publics à différents clients
+      - le trafic entrant est complètement bloqué
+
+      Un seul port côté client ne résout pas cela car la première couche NAT appartient au FAI.
+
+      ## Ce que Nmap montre sur une IP publique partagée
+
+      Si vous scannez votre IP publique avec Nmap, vous scannez l'adresse publique.
+
+      Sous CGNAT, cette adresse peut représenter la couche NAT ISP, pas seulement votre propre routeur.
+
+      Cela soulève une autre question:
+
+      ```txt
+      Will Nmap show ports opened by other customers sharing the same public IP?
+      ```
+
+      En théorie, Nmap montre ce qui est accessible sur cette IP publique depuis l'emplacement du scanner.
+
+      Si le FAI a des cartes publiques pour d'autres clients sur cette même IP et que ces cartes sont accessibles, elles pourraient apparaître comme des ports ouverts.
+
+      Mais dans la pratique, de nombreuses configurations de CGNAT n'exposent pas les renvois arbitraires du port client. Le FAI contrôle les mappages, et le trafic entrant non sollicité est généralement bloqué à moins qu'un service/mapping existe.
+
+      Ainsi, une analyse Nmap de l'IP public ne vous dit pas automatiquement une histoire propre sur votre propre routeur.
+
+      Il vous dit seulement :
+
+      ```txt
+      what is reachable on that public IP from where you scanned
+      ```
+
+      Il ne prouve pas que chaque port ouvert appartient à votre appareil.
+
+      ## Pourquoi les tests locaux vers l'avant du port peuvent induire en erreur
+
+      Une erreur courante est de tester depuis le même réseau local.
+
+      Par exemple:
+
+      ```txt
+      home PC → public IP/domain → home server
+      ```
+
+      Cela peut fonctionner ou échouer en fonction de la réflexion NAT/Hairpin NAT.
+
+      Il ne prouve pas qu'un utilisateur externe peut se connecter.
+
+      De meilleurs tests :
+
+      - essai à partir de données mobiles
+      - demander à quelqu'un en dehors de votre réseau de se connecter
+      - utiliser un vérificateur de port externe
+      - vérifier les journaux du serveur réel après la tentative
+      - comparer le routeur WAN IP avec le public IP
+
+      L'accessibilité WAN doit être testée de l'extérieur.
+
+      ## DDNS ne corrige pas CGNAT
+
+      DDNS résout un problème différent.
+
+      DDNS aide lorsque la PI publique change:
+
+      ```txt
+      dynamic public IP
+        ↓
+      domain updates to current IP
+      ```
+
+      Mais si l'IP actuel est l'IP public de CGNAT partagé par ISP, DDNS n'indique que cette adresse partagée.
+
+      Il ne crée pas d'itinéraire entrant à travers le NAT du PSI.
+
+      Donc ça peut arriver :
+
+      ```txt
+      DDNS updates correctly
+      port forwarding is configured correctly
+      service still unreachable
+      ```
+
+      Cela signifie généralement que le problème n'est pas DNS. Il est accessible à l'intérieur.
+
+      ## WireGuard et CGNAT
+
+      WireGuard peut être affecté par CGNAT selon l'endroit où se trouve le serveur.
+
+      ### Accueil comme serveur WireGuard
+
+      Si le routeur d'origine est derrière CGNAT, les clients extérieurs peuvent ne pas être en mesure d'initier une connexion à celui-ci.
+
+      Problème:
+
+      ```txt
+      phone outside home
+        ↓
+      tries to connect to home public IP
+        ↓
+      ISP CGNAT blocks inbound traffic
+      ```
+
+      ### VPS comme serveur WireGuard
+
+      Une meilleure option est de placer le serveur WireGuard sur un VPS avec une véritable IP publique.
+
+      Puis la maison se connecte vers l'extérieur au VPS:
+
+      ```txt
+      home router/client
+        ↓ outbound tunnel
+      VPS with public IP
+        ↓
+      remote clients connect to VPS
+      ```
+
+      Les connexions sortantes fonctionnent habituellement par CGNAT.
+
+      C'est souvent la solution la plus propre.
+
+      ## Options d'auto-hébergement sous CGNAT
+
+      Lorsque l'hébergement direct est bloqué, les options pratiques sont:
+
+      ### 1. Demandez à un FAI la PI publique
+
+      Certains FAI offrent :
+
+      - réel public IPv4
+      - IPv4 public statique
+      - public dynamique IPv4
+      - plan d'affaires avec propriété intellectuelle publique
+
+      C'est la solution la plus directe si disponible.
+
+      ### 2. Utiliser IPv6
+
+      Si le FAI donne des règles IPv6 réelles et que les règles de pare-feu sont configurées correctement, l'hébergement entrant peut être possible sur IPv6.
+
+      Mais les clients doivent également soutenir IPv6.
+
+      ### 3. Utiliser un tunnel VPS
+
+      HÃ©bergez un petit VPS avec une IP publique et un trafic de tunnel Ã la maison.
+
+      Les options sont les suivantes :
+
+      - Tunnel WireGuard
+      - tunnel SSH inversé
+      - inverser le proxy par rapport au VPN
+      - tunnel de type FRP
+      - Superposition à l'échelle/à l'échelle supérieure
+      - Tunnel Cloudflare pour les services web
+
+      ### 4. Utiliser un VPN Mesh
+
+      Des outils comme un VPN en maille peuvent faciliter l'accès privé sans exposer les ports publics.
+
+      C'est bon pour l'accès à l'administration, mais moins adapté pour les services publics à moins que chaque utilisateur rejoint le maillage.
+
+      ### 5. Services publics d'accueil sur les SPV
+
+      Pour les services publics, la réponse la plus simple est parfois:
+
+      ```txt
+      host it on a VPS
+      ```
+
+      L'hébergement à domicile est utile, mais ne vaut pas toujours la peine de combattre le réseau ISP.
+
+      ## Services publics sous CGNAT
+
+      Les services publics d'État sont souvent là où le CGNAT devient évident.
+
+      Pour un service public, les utilisateurs doivent atteindre:
+
+      ```txt
+      public IP or domain + port
+      ```
+
+      Si CGNAT bloque le trafic entrant, les joueurs ne peuvent pas se connecter directement.
+
+      Solutions possibles:
+
+      - demande de PI publique à l'ISP
+      - accueillir la fonction publique sur un VPS
+      - utiliser un VPS comme relais/tunnel UDP si possible
+      - utiliser un réseau VPN ou maillage pour des services privés
+      - choisir une plate-forme de jeu/serveur avec relais intégré/NAT traversal si disponible
+
+      Pour les serveurs communautaires publics, l'hébergement VPS est souvent plus fiable.
+
+      Pour les serveurs privés, un VPN maillage peut suffire.
+
+      ## Port 22, 80 et 443 Scans
+
+      Si Nmap affiche des ports comme:
+
+      ```txt
+      22
+      80
+      443
+      ```
+
+      ces ports révèlent des services qui répondent à l'adresse numérisée.
+
+      Inférences possibles:
+
+      - `22` suggère généralement SSH
+      - `80` suggère habituellement HTTP
+      - `443` suggère généralement HTTPS
+      - bannières de service peuvent révéler logiciel/version si non caché
+      - Les certificats TLS peuvent révéler des noms d'hôte
+      - Les en-têtes HTTP peuvent révéler le type de serveur
+      - pages Web peuvent révéler l'identité de pile ou d'application
+
+      Mais un scan de port ne révèle pas automatiquement le nom d'utilisateur SSH valide.
+
+      Les attaquants peuvent deviner des noms d'utilisateur communs, mais Nmap ne connaît pas magiquement le compte correct.
+
+      Ce qu'ils peuvent apprendre souvent, c'est :
+
+      ```txt
+      there is an SSH service here
+      it may expose a banner
+      it may allow password or key auth
+      it may reveal implementation details
+      ```
+
+      C'est suffisant pour justifier le durcissement de SSH.
+
+      ## Notes d'exposition SSH
+
+      Si SSH est publiquement exposé, les bonnes bases comprennent:
+
+      - désactiver le mot de passe si possible
+      - utiliser l'authentification par clé
+      - désactiver la connexion root là où c'est pratique
+      - utiliser des lists de pare-feu si possible
+      - utiliser fail2ban ou équivalent, le cas échéant
+      - tenir OpenSSH à jour
+      - éviter d'exposer publiquement SSH si l'accès VPN est possible
+      - vérifier les bannières de service
+      - suivi des journaux
+
+      La sécurité devrait être axée sur la réduction des voies d'accès et la consolidation de l'authentification.
+
+      Changer le port peut réduire le bruit mais ne remplace pas le durcissement approprié.
+
+      ## Règles de renvoi du port du routeur par rapport aux pare-feu
+
+      Sur OpenWrt, un port avant n'est pas seulement un réglage cosmétique.
+
+      Un port de travail avancé nécessite:
+
+      - zone RE correcte
+      - zone de destination correcte
+      - protocole correct TCP/UDP
+      - port extérieur correct
+      - IP interne correcte
+      - port intérieur correct
+      - écoute du périphérique cible
+      - accessibilité publique en amont
+
+      Si l'un d'eux se trompe, le service peut paraître fermé.
+
+      Sous CGNAT, tout cela peut être correct et le service peut toujours être inaccessible parce que le NAT du FAI est devant.
+
+      ## Liste de vérification
+
+      ### Vérifier l'adresse du WAN
+
+      Comparer:
+
+      ```txt
+      router WAN IP
+      external public IP
+      ```
+
+      S'ils diffèrent et que WAN est privé/CGNAT, suspectez CGNAT.
+
+      ### Vérifier le service localement
+
+      Pour LAN :
+
+      ```txt
+      can I connect to the service by local IP?
+      ```
+
+      Si l'accès local échoue, fixez d'abord le service.
+
+      ### Vérifiez le routeur vers l'avant
+
+      Confirmer :
+
+      ```txt
+      protocol
+      external port
+      internal IP
+      internal port
+      firewall zone
+      ```
+
+      ### Vérifier de l'extérieur
+
+      Utilisation:
+
+      - données mobiles
+      - machine extérieure
+      - ami de confiance
+      - Essai VPS
+
+      Ne pas se fier uniquement aux tests LAN.
+
+      ### Vérifier les journaux
+
+      Regarde :
+
+      - carnets de pare-feu du routeur si disponible
+      - registres des services
+      - console de service
+      - Registres VPN
+      - tentative de connexion
+
+      Si aucune tentative n'arrive au service, le bloc peut être en amont.
+
+      ## Arbre de décision pratique
+
+      Un arbre de décision simple:
+
+      ```txt
+      Need private admin access only?
+        → Use WireGuard/Tailscale/VPN.
+
+      Need public web app?
+        → Use VPS, Cloudflare Tunnel, or reverse proxy through VPS.
+
+      Need public service?
+        → Prefer public IP or VPS.
+
+      Need home-only service?
+        → Keep it LAN/VPN only.
+
+      Behind CGNAT and cannot get public IP?
+        → Use outbound tunnel or VPS.
+      ```
+
+      Cela évite de perdre du temps sur des correctifs de transfert de port impossibles.
+
+      ## Décisions pratiques
+
+      ### Ne blâmez pas OpenWrt d'abord
+
+      Si WAN IP est CGNAT, le renvoi du port OpenWrt peut être très bien. La pièce manquante est accessible en amont.
+
+      ### Le DDNS n'est pas un transfert de port
+
+      DDNS résout les adresses changeantes, pas les chemins d'entrée bloqués.
+
+      ### Essai extérieur
+
+      Les tests locaux ne sont pas suffisants pour permettre l'accès du public.
+
+      ### Préférez VPN pour les panneaux d'administration
+
+      Les tableaux de bord Admin, Proxmox, les panneaux routeurs, les bases de données et SSH ne devraient pas être directement exposés si l'accès VPN est possible.
+
+      ### Utiliser VPS lorsque la fiabilité du public est importante
+
+      Pour un service public sérieux, un VPS avec une PI publique réelle est généralement plus propre que de combattre CGNAT.
+
+      ## Ce qu'une explication terminée devrait montrer
+
+      Une note bien terminée doit montrer :
+
+      - CGNAT topologie
+      - différence entre le routeur WAN IP et le public IP
+      - pourquoi le transfert de port échoue
+      - pourquoi les IP publiques partagées ne peuvent pas cartographier un port à plusieurs clients
+      - ce que Nmap peut et ne peut pas prouver
+      - pourquoi DDNS ne résout pas CGNAT
+      - alternatives pratiques
+      - liste de contrôle
+      - arbre de décision pour les options d'auto-hébergement
+
+      ## Preuves à retenir
+
+      Voici quelques éléments de preuve utiles à cette note :
+
+      - routeur Prise d'écran IP WAN avec des pièces sensibles cachées
+      - contrôle externe public IP avec des pièces sensibles cachées
+      - Exemple de port avant OpenWrt
+      - Essai de port extérieur raté
+      - test de service local réussi
+      - traceroute ou notes de chemin si utile
+      - Résultat Nmap avec interprétation
+      - Diagramme du tunnel VPS
+      - Diagramme de topologie WireGuard
+      - Notes publiques IP/CGNAT des FAI
+
+      ## Hypothèses techniques
+
+      Cette note suppose qu'un utilisateur d'une maison essaie d'accueillir des services à partir d'une connexion résidentielle.
+
+      Il suppose que le FAI peut placer le client derrière CGNAT.
+
+      Il suppose également que l'utilisateur contrôle sa configuration routeur/OpenWrt, mais ne contrôle pas la couche NAT ISP.
+
+      ## Principaux risques
+
+      - en supposant qu'un port avant fonctionne parce qu'il est configuré
+      - test uniquement à partir du LAN
+      - DDNS déroutant avec accessibilité en entrée
+      - exposant publiquement les panneaux SSH ou admin
+      - penser que les ports ouverts Nmap appartiennent toujours à votre routeur
+      - essayant d'accueillir des services publics sur une connexion qui ne peut recevoir de trafic entrant
+      - ignorer les différences UDP vs TCP
+      - ne pas vérifier les journaux du serveur pendant les tests
+      - s'appuyant sur une IP dynamique sans mécanisme de mise à jour
+      - choisir des tunnels compliqués quand un VPS serait plus simple
+
+      ## État actuel
+
+      Cette note représente la compréhension pratique nécessaire avant d'exploiter les services d'un réseau privé.
+
+      Il se connecte à OpenWrt, WireGuard, DDNS, services publics, ports publics et limitations des FAI.
+
+      La valeur principale est d'éviter le dépannage gaspillé lorsque le vrai bloqueur n'est pas le serveur local, mais le chemin réseau ISP.
+
+      ## Ce que la présente note ne prétend pas
+
+      Cette note ne prétend pas que CGNAT est mauvais pour chaque utilisateur.
+
+      Il ne prétend pas que chaque configuration d'ISP se comporte de la même façon.
+
+      Elle ne prétend pas que l'hébergement à domicile est impossible dans toutes les conditions du CGNAT.
+
+      Il explique pourquoi l'hébergement direct en entrée échoue souvent et comment choisir la bonne solution de rechange.
+
+      ## À emporter pratique
+
+      La leçon importante est:
+
+      > Un service peut être parfaitement configuré localement et toujours inaccessible depuis Internet si l'itinéraire public n'atteint pas votre routeur.
+
+      Pour l'auto-hébergement, vérifiez toujours:
+
+      - routeur WAN IP
+      - IP publique
+      - disponibilité du service local
+      - protocole/port correct
+      - accessibilité externe
+      - Statut ISP/CGNAT
+
+      Après cela, choisissez le bon chemin :
+
+      ```txt
+      public IP
+      IPv6
+      VPS
+      VPN
+      tunnel
+      or local-only access
+      ```
+
+      Cela rend le dépannage pratique au lieu de deviner.
 seoTitle: "CGNAT and Self-Managed Infrastructure Limits"
 seoDescription: "A practical note about CGNAT, self-managed infrastructure, port forwarding, public IP scans, shared public IP behavior, and alternatives like VPS tunnels and VPN access."
 ---

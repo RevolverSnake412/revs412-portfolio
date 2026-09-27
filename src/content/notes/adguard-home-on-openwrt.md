@@ -18,6 +18,482 @@ date: "2026-07-06"
 updated: "2026-07-25"
 featured: true
 published: true
+translations:
+  fr:
+    title: "AdGuard Home sur OpenWrt"
+    category: "Réseau"
+    summary: "Notes pratiques sur AdGuard Home dans OpenWrt, la responsabilité DNS, les conflits sur le port 53, les échecs de résolution et le dépannage."
+    resumeSummary: >-
+      Documenté la conception et le dépannage de l'exécution d'AdGuard Home sur un routeur OpenWrt comme la
+      couche de filtrage DNS réseau. La note cartographie la propriété DNS entre AdGuard Home, dnsmasq,
+      annonces DHCP, noms locaux, résolveurs en amont, règles de pare-feu, et clients LAN, en mettant l'accent
+      sur les conflits de port 53 et l'isolement des défaillances. Il fournit un moyen répétable de vérifier
+      le chemin du résolveur complet, récupérer de la résolution locale cassée, et préserver une répartition
+      claire des responsabilités entre le routage, DHCP, et le filtrage DNS.
+    body: |-
+
+      ## Pourquoi cette note existe
+
+      Le filtrage DNS est utile jusqu'à ce que DNS devienne la chose qui casse.
+
+      AdGuard Home peut transformer un routeur OpenWrt en un dispositif de filtrage DNS à l'échelle du réseau. Cela rend la navigation plus propre, bloque les domaines indésirables, et donne une visibilité dans ce que les appareils résolvent.
+
+      Mais lorsque AdGuard Home fonctionne sur le même routeur qui gère également DHCP, routage, règles de pare-feu et services locaux, la propriété DNS doit être claire.
+
+      Cette note documente le côté pratique de l'exécution d'AdGuard Home sur OpenWrt: ce qui devrait écouter sur le port 53, comment les clients devraient atteindre DNS, ce qui arrive quand la résolution locale échoue, et comment déboguer le problème sans deviner.
+
+      ## Contexte du réseau
+
+      La configuration est un routeur OpenWrt exécutant des services réseau locaux.
+
+      AdGuard Home est utilisé comme couche de filtrage DNS pour les clients du réseau local.
+
+      Dans ce type de configuration, plusieurs composants peuvent toucher DNS:
+
+      - Accueil AdGuard
+      - OpenWrt `dnsmasq`
+      - Options DHCP
+      - `/etc/resolv.conf`
+      - Résolveurs DNS en amont
+      - clients locaux
+      - règles du pare-feu
+      - interfaces d'écoute et ports
+
+      La question principale est simple:
+
+      > Qui possède le DNS sur le routeur, et où les clients envoient-ils les demandes DNS?
+
+      Si cela n'est pas clair, les échecs deviennent confus.
+
+      ## Ce que cette configuration veut prouver
+
+      - Le filtrage DNS doit être traité comme une infrastructure, pas seulement une application supplémentaire
+      - la propriété du port 53 doit être intentionnelle
+      - `dnsmasq` et AdGuard Home ont besoin de rôles clairs
+      - les défaillances du résolveur doivent être débogées couche par couche
+      - les clients peuvent être connectés mais incapables de naviguer si le DNS est cassé
+      - les tests DNS locaux et en amont racontent différentes histoires
+      - un routeur exécutant le filtrage DNS a besoin d'un chemin de récupération
+
+      ## Outils et domaines utilisés
+
+      ### Couche DNS
+
+      - Accueil AdGuard
+      - OpenWrt `dnsmasq`
+      - DHCP DNS publicité
+      - Résolveurs DNS en amont
+      - direction de résolution de domaine local
+      - Règles de filtrage DNS
+
+      ### Couche ouverte
+
+      - LuCI
+      - SSH
+      - gestion des services
+      - journaux
+      - configuration du réseau
+      - Zones pare-feu
+      - liaison de l'interface
+
+      ### Outils de dépannage
+
+      - `nslookup`
+      - `ping`
+      - `netstat`
+      - `ss`
+      - `logread`
+      - commandes de redémarrage de service
+      - Paramètres du réseau OpenWrt et du DHCP
+
+      ## Construction prévue
+
+      La configuration prévue est un réseau où les clients LAN utilisent AdGuard Home comme résolveur DNS.
+
+      AdGuard Home devrait :
+
+      - écouter sur la bonne adresse du routeur
+      - recevoir les demandes DNS de clients LAN
+      - transmettre les requêtes autorisées au DNS en amont
+      - block/filter domaines indésirables
+      - Afficher les journaux des requêtes
+      - éviter les conflits avec les services DNS OpenWrt
+      - continuer à travailler de façon prévisible après le redémarrage
+
+      OpenWrt doit toujours gérer le routage, le pare-feu et le DHCP. Selon la conception choisie, `dnsmasq` peut gérer uniquement le DHCP, ou le renvoi DNS peut être ajusté de sorte qu'AdGuard Home possède le chemin DNS.
+
+      ## Rôles essentiels du DNS
+
+      ### Rôle de la maison AdGuard
+
+      AdGuard Home est le résolveur DNS filtrant.
+
+      Il devrait recevoir les requêtes DNS client, appliquer des règles de filtrage, et transmettre les requêtes autorisées aux résolveurs en amont.
+
+      Paramètres importants & #160;:
+
+      - adresse d'écoute
+      - port d'écoute
+      - DNS en amont
+      - bootstrap DNS si nécessaire
+      - visibilité du client
+      - règles de filtrage
+      - journaux de requêtes
+      - comportement de cache
+
+      ### Rôle `dnsmasq`
+
+      OpenWrt utilise normalement `dnsmasq` pour DHCP et DNS.
+
+      Lorsque AdGuard Home est ajouté, `dnsmasq` peut toujours être utile pour DHCP, mais la propriété du service DNS doit être planifiée.
+
+      Approches possibles:
+
+      1. AdGuard Home écoute sur le port 53 et `dnsmasq` DNS est déplacé / désactivé.
+      2. `dnsmasq` écoute un autre port et l'envoie à AdGuard.
+      3. Les clients utilisent AdGuard directement via les options DHCP.
+
+      La conception exacte importe moins que la cohérence.
+
+      ### Rôle du DHCP
+
+      DHCP indique aux clients quel serveur DNS utiliser.
+
+      Si les clients sont censés utiliser AdGuard Home, DHCP devrait annoncer la bonne adresse routeur/DNS.
+
+      Si DHCP pointe toujours les clients ailleurs, AdGuard peut être en cours d'exécution, mais pas réellement utilisé.
+
+      ## Portée de la prestation
+
+      ### 1. Installer et exécuter AdGuard Home
+
+      Installez AdGuard Home et confirmez le démarrage du service.
+
+      Le service devrait être accessible par l'intermédiaire de son interface Web et devrait survivre aux remises en question.
+
+      ### 2. Décider de la propriété du DNS
+
+      Décider si AdGuard Home ou `dnsmasq` écoute sur le port 53.
+
+      C'est la décision la plus importante parce que les deux services ne peuvent pas posséder la même adresse et le même port en même temps.
+
+      Un conflit de port peut faire échouer le DNS silencieusement ou incohérentement.
+
+      ### 3. Configurer l'adresse d'écoute
+
+      AdGuard Home devrait écouter où les clients peuvent l'atteindre.
+
+      Pour une configuration de routeur LAN, cela peut être :
+
+      ```txt
+      192.168.1.1:53
+      ```
+
+      ou une autre adresse du routeur LAN selon le réseau.
+
+      Si AdGuard n'écoute que sur localhost, les clients LAN peuvent ne pas l'atteindre.
+
+      Si AdGuard écoute sur la mauvaise interface, le routeur lui-même peut résoudre mais les clients peuvent échouer, ou le contraire.
+
+      ### 4. Configurer DNS en amont
+
+      AdGuard a besoin de résolveurs en amont pour répondre aux requêtes autorisées.
+
+      Par exemple, les fournisseurs publics de DNS ou de DNS des fournisseurs de services Internet, selon les préférences.
+
+      La partie importante est que DNS en amont fonctionne indépendamment du chemin de filtrage local.
+
+      ### 5. Configurer la publicité DHCP DNS
+
+      Les clients devraient recevoir le bon serveur DNS via DHCP.
+
+      Si l'IP du routeur est le serveur DNS, les clients doivent interroger le routeur. Si un autre chemin DNS est utilisé, DHCP devrait le refléter.
+
+      Après avoir modifié les paramètres DNS DHCP, les clients peuvent avoir besoin de se reconnecter ou de renouveler leur bail.
+
+      ### 6. Tester la résolution locale et cliente
+
+      Tester à la fois à partir du routeur et d'un appareil client.
+
+      Essai du routeur:
+
+      ```bash
+      nslookup example.com 127.0.0.1
+      nslookup example.com 192.168.1.1
+      nslookup example.com 1.1.1.1
+      ```
+
+      Test client :
+
+      ```bash
+      nslookup example.com
+      nslookup example.com 192.168.1.1
+      ```
+
+      Le but est de savoir exactement où DNS fonctionne et où il échoue.
+
+      ## Décisions pratiques
+
+      ### Ne quittez pas le port 53 ambigu
+
+      Le port 53 devrait avoir un propriétaire clair sur l'adresse pertinente.
+
+      Vérifiez ce qui vous écoute :
+
+      ```bash
+      netstat -lnup | grep ':53'
+      ```
+
+      ou:
+
+      ```bash
+      ss -lnup | grep ':53'
+      ```
+
+      Si AdGuard Home écoute sur `192.168.1.1:53`, alors tester `127.0.0.1:53` peut échouer sauf si AdGuard est également lié à localhost.
+
+      Cette différence est importante.
+
+      ### Séparer le DHCP du DNS mentalement
+
+      DHCP et DNS sont souvent traités par le même service, mais ils ne sont pas le même travail.
+
+      Il est possible de garder `dnsmasq` pour DHCP tout en changeant la façon dont DNS est géré.
+
+      ### Essai en amont DNS séparément
+
+      Si le DNS en amont échoue, AdGuard ne peut pas résoudre les domaines autorisés.
+
+      Si le DNS en amont fonctionne mais que le DNS local échoue, le problème est probablement lié au local, à la propriété du port, au pare-feu ou au chemin client DHCP.
+
+      ### Gardez un chemin de recul
+
+      Si AdGuard Home casse, tout le réseau peut sembler cassé.
+
+      Il aide à savoir comment restaurer temporairement DNS via `dnsmasq` ou DNS public jusqu'à ce que le chemin de filtrage soit corrigé.
+
+      ## Notes de dépannage
+
+      ### DNS fait complètement faillite
+
+      Symptômes:
+
+      - les sites Web ne sont pas chargés
+      - les clients montrent Internet connecté mais les pages échouent
+      - `nslookup` fois dehors
+      - les mises à jour du paquetage router échouent parce que les noms de domaine ne peuvent pas résoudre
+
+      Objets à tester :
+
+      ```bash
+      ping 1.1.1.1
+      nslookup downloads.openwrt.org
+      nslookup downloads.openwrt.org 1.1.1.1
+      netstat -lnup | grep ':53'
+      logread | grep -i dns
+      ```
+
+      Si `ping 1.1.1.1` fonctionne mais que `nslookup` échoue, le chemin Internet peut être bien et DNS est la couche cassée.
+
+      ### `nslookup 127.0.0.1` Fails
+
+      Exemple de symptôme :
+
+      ```txt
+      nslookup: write to '127.0.0.1': Connection refused
+      ```
+
+      Cela peut arriver si aucun service DNS n'écoute sur `127.0.0.1:53`.
+
+      Si AdGuard Home écoute uniquement sur l'adresse LAN, comme :
+
+      ```txt
+      192.168.1.1:53
+      ```
+
+      alors les requêtes localhost peuvent échouer pendant que les requêtes d'adresse LAN fonctionnent.
+
+      Essai:
+
+      ```bash
+      nslookup example.com 192.168.1.1
+      ```
+
+      Ne présumez pas que localhost et LAN IP se comportent de la même façon.
+
+      ### Port 53 Conflit
+
+      Symptômes:
+
+      - AdGuard Home ne démarre pas DNS
+      - Les journaux `dnsmasq` ou AdGuard montrent des erreurs de liaison
+      - DNS fonctionne parfois mais pas toujours
+      - service redémarrer change le comportement
+
+      Vérification :
+
+      ```bash
+      netstat -lnup | grep ':53'
+      ```
+
+      Un seul service devrait lier la même adresse et le même port.
+
+      Conflits fréquents:
+
+      ```txt
+      dnsmasq wants :53
+      AdGuard Home wants :53
+      ```
+
+      Décider quel service possède le DNS et configurer l'autre en conséquence.
+
+      ### Clients ne utilisant pas AdGuard
+
+      AdGuard Home peut fonctionner, mais les clients peuvent encore utiliser un autre serveur DNS.
+
+      Signes :
+
+      - Le journal des requêtes AdGuard est vide
+      - les règles de blocage ne s'appliquent pas
+      - client serveur DNS pointe vers ISP/routeur/autre adresse
+      - DHCP annonce toujours un autre serveur DNS
+
+      Vérifiez un client :
+
+      ```bash
+      nslookup example.com
+      ```
+
+      Ensuite, vérifiez quel serveur DNS le client utilise.
+
+      ### Routeur ne peut pas résoudre les sources de paquets
+
+      Exemple :
+
+      ```txt
+      apk update
+      wget failed
+      nslookup downloads.openwrt.org fails
+      ```
+
+      Cela signifie que le routeur lui-même ne peut pas résoudre les noms.
+
+      Causes possibles:
+
+      - `/etc/resolv.conf` pointe quelque part inaccessible
+      - service local DNS ne pas écouter où les requêtes du routeur
+      - AdGuard en amont DNS cassé
+      - problème de pare-feu
+      - Mauvaise liaison DNS
+
+      Tester avec un résolveur explicite:
+
+      ```bash
+      nslookup downloads.openwrt.org 1.1.1.1
+      ```
+
+      Si le DNS public explicite fonctionne, le chemin du résolveur par défaut du routeur est le problème.
+
+      ## Exemple de direction de travail
+
+      Une direction propre est:
+
+      ```txt
+      AdGuard Home listens on: 192.168.1.1:53
+      Clients receive DNS:     192.168.1.1
+      AdGuard upstream DNS:    public or chosen upstream resolvers
+      dnsmasq handles:         DHCP, not conflicting DNS
+      ```
+
+      Ce n'est qu'un exemple. La configuration exacte dépend de la façon dont OpenWrt et AdGuard sont configurés.
+
+      L'important est que le chemin DNS soit intentionnel.
+
+      ## Ce qu'une configuration terminée devrait montrer
+
+      Une configuration solide devrait montrer:
+
+      - AdGuard Home fonctionne après le redémarrage
+      - AdGuard écoute sur l'adresse et le port prévus
+      - pas de conflit au port 53
+      - clients recevant le bon serveur DNS
+      - requêtes visibles dans les journaux AdGuard
+      - travail DNS en amont
+      - domaines bloqués en fait bloqués
+      - travail du paquet routeur/mise à jour de résolution
+      - Méthode de récupération des retombées documentée
+      - Tests DNS du routeur et du client
+
+      ## Preuves à retenir
+
+      Voici quelques éléments de preuve utiles à cette note :
+
+      - Capture d'écran du tableau de bord d'AdGuard Home
+      - Capture d'écran des paramètres DNS
+      - Capture d'écran du résolveur en amont
+      - Capture d'écran des paramètres DHCP/DNS OpenWrt
+      - Sortie `netstat -lnup | grep ':53'`
+      - Essais `nslookup` à partir du routeur
+      - Tests `nslookup` du client
+      - capture d'écran du journal des requêtes
+      - test de domaine bloqué
+      - État de service
+      - notes montrant le modèle de propriété DNS choisi
+
+      ## Hypothèses techniques
+
+      Cette configuration suppose que le routeur est destiné à être le point DNS pour les clients LAN.
+
+      Il suppose que AdGuard Home est suffisamment stable pour agir comme un résolveur DNS à l'échelle du réseau.
+
+      Il suppose également que la personne qui maintient le réseau comprend comment restaurer le DNS de base si AdGuard Home s'arrête ou est mal configurée.
+
+      ## Principaux risques
+
+      - AdGuard et `dnsmasq` luttent pour le port 53
+      - clients n'utilisant pas réellement AdGuard
+      - routeur lui-même ne résolvant pas les noms
+      - erreurs de configuration DNS en amont
+      - Reliure AdGuard uniquement sur une interface inattendue
+      - perte d'utilisation d'Internet parce que le service de filtrage DNS est en baisse
+      - bloquer les domaines nécessaires pour les mises à jour ou les applications
+      - modifier les paramètres DHCP DNS sans renouveler les clients
+      - oubliant comment récupérer DNS après un mauvais changement de configuration
+
+      ## État actuel
+
+      AdGuard Home fait partie du réseau DNSs et de la direction de filtrage.
+
+      La valeur principale est le contrôle et la visibilité sur les requêtes DNS, mais il devient également une dépendance. Quand il échoue, le réseau peut sembler cassé même lorsque le routage est bon.
+
+      Cette note est connectée à la configuration d'OpenWrt parce que DNS est au centre du routeur.
+
+      ## Ce que la présente note ne prétend pas
+
+      La présente note ne prétend pas qu'AdGuard Home est nécessaire pour chaque réseau domestique.
+
+      Il ne prétend pas que le filtrage DNS est un remplacement pour les mises à jour de sécurité, les règles de pare-feu, ou la navigation en toute sécurité.
+
+      Il ne prétend pas qu'une mise en page DNS corresponde à chaque configuration OpenWrt.
+
+      Il s'agit d'une note de champ sur rendre le filtrage DNS compréhensible et débogable.
+
+      ## À emporter pratique
+
+      Une configuration AdGuard Home en service n'est pas seulement :
+
+      > installez AdGuard et activez le blocage.
+
+      La partie utile est de connaître le chemin DNS:
+
+      - qui écoute sur le port 53
+      - les adresses utilisées par les clients
+      - ce que DNS utilise le routeur lui-même
+      - où les requêtes en amont vont
+      - comment tester à partir du routeur et du client
+      - comment récupérer lorsque DNS casse
+
+      C'est ce qui rend l'installation durable.
 seoTitle: "AdGuard Home on OpenWrt"
 seoDescription: "A practical note about running AdGuard Home on OpenWrt, debugging DNS failures, port 53 conflicts, resolver behavior, and client DNS paths."
 ---
