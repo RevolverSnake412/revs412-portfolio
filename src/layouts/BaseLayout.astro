@@ -7,16 +7,30 @@ import Terminal from '../components/Terminal.astro';
 import CommandContext from '../components/CommandContext.astro';
 import { alternateLocale, defaultLocale, localizedPath, withBase, type Locale } from '../i18n';
 
-interface Props { title?: string; description?: string; showCommandContext?: boolean; locale?: Locale; alternatePath?: string; }
+type StructuredData = Record<string, unknown>;
+interface Props { title?: string; description?: string; showCommandContext?: boolean; locale?: Locale; alternatePath?: string; structuredData?: StructuredData | StructuredData[]; }
 const settings = await getEntry('settings', 'site');
 if (!settings) throw new Error('Missing settings/site.yaml');
-const { title = settings.data.title, description = settings.data.description, showCommandContext = true, locale = defaultLocale, alternatePath } = Astro.props;
+const { title = settings.data.title, description = settings.data.description, showCommandContext = true, locale = defaultLocale, alternatePath, structuredData } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
 const base = import.meta.env.BASE_URL;
+const siteUrl = new URL(base, Astro.site ?? Astro.url.origin).toString();
 const pagePath = Astro.url.pathname
   .replace(/^\/fr(?=\/|$)/, '/')
   .replace(/^\/+|\/+$/g, '');
 const languageHref = withBase(base, localizedPath(alternateLocale(locale), alternatePath ?? pagePath));
+const personSchema: StructuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  '@id': `${siteUrl}#oussama-ait-agnaou`,
+  name: 'Oussama Ait Agnaou',
+  url: siteUrl,
+  jobTitle: locale === 'fr' ? 'Ingénieur logiciel indépendant et spécialiste réseau' : 'Independent Software Engineer and Network Specialist',
+  description: locale === 'fr' ? 'Ingénieur logiciel indépendant et spécialiste réseau, disponible à distance depuis le Maroc.' : 'Independent Software Engineer and Network Specialist, available remotely from Morocco.',
+  address: { '@type': 'PostalAddress', addressCountry: 'MA' },
+  sameAs: [settings.data.contact.github, settings.data.contact.linkedin].filter((value): value is string => Boolean(value)),
+};
+const schemaBlocks = [personSchema, ...(structuredData ? (Array.isArray(structuredData) ? structuredData : [structuredData]) : [])];
 ---
 <!doctype html>
 <html lang={locale}>
@@ -34,6 +48,9 @@ const languageHref = withBase(base, localizedPath(alternateLocale(locale), alter
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content={locale === 'fr' ? 'fr_MA' : 'en_US'} />
+    <meta name="author" content="Oussama Ait Agnaou" />
+    {schemaBlocks.map((schema) => <script is:inline type="application/ld+json" set:html={JSON.stringify(schema)} />)}
     <title>{title}</title>
   </head>
   <body>

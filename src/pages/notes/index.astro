@@ -5,9 +5,9 @@ import NoteIndexEntry from '../../components/NoteIndexEntry.astro';
 import EmptyState from '../../components/EmptyState.astro';
 const notes = (await getCollection('notes', ({ data }) => data.published)).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 ---
-<BaseLayout title="Notes · revs412" description="Technical field notes about systems, troubleshooting, and decisions.">
+<BaseLayout title="Technical Notes on Infrastructure, Networks & Deployment | revs412" description="Practical technical notes on software systems, network infrastructure, OpenWrt, WireGuard, automation, deployment, troubleshooting, recovery, and documentation.">
   <main class="shell page">
-    <header class="page-header"><p class="eyebrow">personal technical knowledge base</p><h1>Notes</h1><p>A working collection of practical notes, commands, troubleshooting steps, configuration references, and lessons from systems work, homelab projects, and hands-on learning.</p></header>
+    <header class="page-header"><p class="eyebrow">personal technical knowledge base</p><h1>Technical notes on systems, networks, infrastructure, and deployment.</h1><p>A working collection of practical notes, commands, troubleshooting steps, configuration references, and lessons from software systems, network infrastructure, OpenWrt, automation, deployment, recovery, and hands-on learning.</p></header>
     <section class="work-guidance" aria-labelledby="notes-guidance-title">
       <h2 id="notes-guidance-title">How I use these notes</h2>
       <p>Most notes start as working material. They are kept here so a useful fix, decision, or reference can be found again, reused, and improved over time.</p>

@@ -11,8 +11,22 @@ const { entry, translation } = Astro.props;
 const body = await marked.parse(translation.body);
 const date = entry.data.date.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
 const updated = entry.data.updated?.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+const title = translation.seoTitle ?? `${translation.title} | Guide technique pratique | revs412`;
+const description = translation.seoDescription ?? translation.summary;
+const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).toString();
+const articleSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: translation.title,
+  description,
+  datePublished: entry.data.date.toISOString(),
+  dateModified: (entry.data.updated ?? entry.data.date).toISOString(),
+  inLanguage: 'fr',
+  mainEntityOfPage: canonical,
+  author: { '@type': 'Person', name: 'Oussama Ait Agnaou', url: 'https://revs412.me/' },
+};
 ---
-<BaseLayout locale="fr" alternatePath={`notes/${entry.data.slug}`} title={translation.seoTitle ?? `${translation.title} · revs412`} description={translation.seoDescription ?? translation.summary}>
+<BaseLayout locale="fr" alternatePath={`notes/${entry.data.slug}`} title={title} description={description} structuredData={articleSchema}>
   <main class="shell page"><article class="detail">
     <header class="page-header"><p class="eyebrow">notes / {translation.category}</p><h1>{translation.title}</h1><div class="detail-meta"><span>{date}</span>{updated && <span>mis à jour le {updated}</span>}</div><p>{translation.summary}</p></header>
     {entry.data.cover && <img src={entry.data.cover} alt="" />}

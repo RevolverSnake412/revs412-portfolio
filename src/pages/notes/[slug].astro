@@ -10,8 +10,22 @@ const { entry } = Astro.props;
 const { Content } = await render(entry);
 const date = entry.data.date.toLocaleDateString('en', { year: 'numeric', month: 'long', day: 'numeric' });
 const updated = entry.data.updated?.toLocaleDateString('en', { year: 'numeric', month: 'long', day: 'numeric' });
+const title = entry.data.seoTitle ?? `${entry.data.title} | Practical Technical Guide | revs412`;
+const description = entry.data.seoDescription ?? entry.data.summary;
+const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).toString();
+const articleSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: entry.data.title,
+  description,
+  datePublished: entry.data.date.toISOString(),
+  dateModified: (entry.data.updated ?? entry.data.date).toISOString(),
+  inLanguage: 'en',
+  mainEntityOfPage: canonical,
+  author: { '@type': 'Person', name: 'Oussama Ait Agnaou', url: 'https://revs412.me/' },
+};
 ---
-<BaseLayout title={entry.data.seoTitle ?? `${entry.data.title} · revs412`} description={entry.data.seoDescription ?? entry.data.summary} alternatePath={entry.data.translations?.fr ? `notes/${entry.data.slug}` : undefined}>
+<BaseLayout title={title} description={description} alternatePath={entry.data.translations?.fr ? `notes/${entry.data.slug}` : undefined} structuredData={articleSchema}>
   <main class="shell page"><article class="detail">
     <header class="page-header"><p class="eyebrow">notes / {entry.data.category}</p><h1>{entry.data.title}</h1><div class="detail-meta"><span>{date}</span>{updated && <span>updated {updated}</span>}</div><p>{entry.data.summary}</p></header>
     {entry.data.cover && <img src={entry.data.cover} alt="" />}

@@ -9,8 +9,8 @@ const work = (await getCollection('work', ({ data }) => data.published && Boolea
   .map((entry) => ({ entry, translation: entry.data.translations!.fr! }))
   .sort((a, b) => b.entry.data.date.valueOf() - a.entry.data.date.valueOf());
 ---
-<BaseLayout locale="fr" alternatePath="work">
-  <main class="shell page"><header class="page-header"><p class="eyebrow">études de cas</p><h1>{copy.translatedWork}</h1><p>Projets disponibles en français.</p></header>
+<BaseLayout locale="fr" alternatePath="work" title="Études de cas en ingénierie logicielle et infrastructure réseau | revs412" description="Études de cas sur les systèmes métier, l’intégration logicielle, l’infrastructure réseau, l’accès distant sécurisé, l’automatisation, le déploiement et la documentation technique.">
+  <main class="shell page"><header class="page-header"><p class="eyebrow">études de cas</p><h1>Projets en ingénierie logicielle et infrastructure réseau.</h1><p>Études de cas sur les systèmes métier, les intégrations logicielles, l’accès distant sécurisé, l’automatisation, le déploiement, le dépannage et la documentation technique.</p></header>
     <section class="work-index-section"><div class="work-index">{work.map(({ entry, translation }) => <article class="work-index-entry"><h2>{translation.title}</h2><p class="work-index-meta">{translation.type} <span>· {entry.data.date.toLocaleDateString('fr-FR', { year: 'numeric', month: 'short' })}</span></p><p class="work-index-summary">{translation.summary}</p><a class="work-index-open" href={`${base}fr/work/${entry.data.slug}/`}>Ouvrir : voir le projet →</a></article>)}</div>{work.length === 0 && <p class="empty-state">{copy.translationPending}</p>}</section>
   </main>
 </BaseLayout>

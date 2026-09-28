@@ -9,8 +9,10 @@ export async function getStaticPaths() {
 const { entry } = Astro.props;
 const { Content } = await render(entry);
 const projectDate = entry.data.date.toLocaleDateString('en', { year: 'numeric', month: 'long', day: 'numeric' });
+const title = entry.data.seoTitle ?? `${entry.data.title} | ${entry.data.type} Case Study | revs412`;
+const description = entry.data.seoDescription ?? entry.data.summary;
 ---
-<BaseLayout title={`${entry.data.title} · revs412`} description={entry.data.summary} alternatePath={entry.data.translations?.fr ? `work/${entry.data.slug}` : undefined}>
+<BaseLayout title={title} description={description} alternatePath={entry.data.translations?.fr ? `work/${entry.data.slug}` : undefined}>
   <main class="shell page"><article class="detail">
     <header class="page-header"><p class="eyebrow">project / {projectDate}</p><h1>{entry.data.title}</h1><p>{entry.data.summary}</p></header>
     {entry.data.cover && <img src={entry.data.cover} alt="" />}

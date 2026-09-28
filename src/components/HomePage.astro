@@ -13,8 +13,8 @@ const frenchSite = {
   ...settings.data,
   heroLead: 'Des systèmes techniques concrets,',
   heroSentences: ['conçus avec un raisonnement clair.', 'faits pour durer.', 'planifiés avant d’être construits.', 'ancrés dans des besoins réels.', 'améliorés par un débogage rigoureux.', 'documentés pour les évolutions futures.', 'testés dans des conditions concrètes.', 'organisés autour de décisions claires.', 'rendus fiables par l’attention aux détails.', 'pensés pour l’usage quotidien.'],
-  heroSubtitleLines: ['Je travaille sur des outils métier, des systèmes logiciels, des infrastructures, l’automatisation, le déploiement et le dépannage.', 'Mon objectif est de choisir le bon niveau de complexité et de rendre les systèmes compréhensibles, utilisables et fiables.'],
-  description: 'Je travaille sur des outils métier, des systèmes logiciels, des infrastructures, l’automatisation, le déploiement et le dépannage. Mon objectif est de choisir le bon niveau de complexité et de rendre les systèmes compréhensibles, utilisables et fiables.',
+  heroSubtitleLines: ['Je travaille sur des systèmes métier, des systèmes logiciels, des infrastructures, l’automatisation, le déploiement, le dépannage et la documentation technique.', 'Mon objectif est de choisir le bon niveau de complexité et de rendre les systèmes compréhensibles, utilisables et fiables.'],
+  description: 'Je travaille sur des systèmes métier, des systèmes logiciels, des infrastructures, l’automatisation, le déploiement, le dépannage et la documentation technique. Mon objectif est de choisir le bon niveau de complexité et de rendre les systèmes compréhensibles, utilisables et fiables.',
 };
 const site = locale === 'fr' ? frenchSite : settings.data;
 const [allWork, allNotes, principles] = await Promise.all([
@@ -28,7 +28,7 @@ const sortedPrinciples = principles.sort((a, b) => a.data.order - b.data.order);
 const base = import.meta.env.BASE_URL;
 const contentBase = locale === 'fr' ? `${base}fr/` : base;
 const cursorBase = `${base}icons/cursors/`;
-const portfolioEntries = ['work/', 'notes/', 'principles/', 'contact/', 'intro.md'];
+const portfolioEntries = ['services/', 'work/', 'notes/', 'principles/', 'contact/', 'intro.md'];
 const translateWork = (data: (typeof allWork)[number]['data']) => locale === 'fr' ? data.translations?.fr : data;
 const translateNote = (data: (typeof allNotes)[number]['data']) => locale === 'fr' ? data.translations?.fr : data;
 const previewTerminalData = {
@@ -40,9 +40,11 @@ const previewTerminalData = {
   principles: locale === 'fr' ? frenchPrinciples : sortedPrinciples.map(({ data }) => data.statement),
 };
 const copy = locale === 'fr' ? {
-  selectedWork: 'Projets sélectionnés', allWork: 'tous les projets →', noWork: 'Les études de cas apparaîtront ici lorsqu’elles seront prêtes à être partagées.', latestNotes: 'Dernières notes', allNotes: 'toutes les notes →', noNotes: 'Les notes sur les systèmes, les décisions et la récupération sont en préparation.', principles: 'Principes de travail', howIWork: 'Ma façon de travailler', principlesText: `${sortedPrinciples.length} principes concrets guident mes choix de périmètre, le débogage, la documentation et la maintenabilité des systèmes.`, readPrinciples: 'Lire tous les principes →', resume: 'CV', resumeText: 'Un aperçu concis des réalisations publiées et des notes techniques sélectionnées.', downloadResume: 'Télécharger le CV PDF ↓', workLabel: 'projet', readWork: 'lire l’étude de cas →', readNote: 'lire la note →', minimize: 'Réduire la fenêtre intro.md', maximize: 'Passer en mode fenêtre flottante', close: 'Fermer la fenêtre intro.md', hideKonsole: 'Masquer Konsole', editorLabel: 'Éditeur de présentation', taskbarLabel: 'Barre des tâches KDE Plasma'
+  selectedWork: 'Projets sélectionnés', allWork: 'tous les projets →', noWork: 'Les études de cas apparaîtront ici lorsqu’elles seront prêtes à être partagées.', latestNotes: 'Dernières notes', allNotes: 'toutes les notes →', noNotes: 'Les notes sur les systèmes, les décisions et la récupération sont en préparation.', principles: 'Principes de travail', howIWork: 'Ma façon de travailler', principlesText: `${sortedPrinciples.length} principes concrets guident mes choix de périmètre, le débogage, la documentation et la maintenabilité des systèmes.`, readPrinciples: 'Lire tous les principes →', resume: 'CV', resumeText: 'Un aperçu concis des réalisations publiées et des notes techniques sélectionnées.', downloadResume: 'Télécharger le CV PDF ↓', workLabel: 'projet', readWork: 'lire l’étude de cas →', readNote: 'lire la note →', minimize: 'Réduire la fenêtre intro.md', maximize: 'Passer en mode fenêtre flottante', close: 'Fermer la fenêtre intro.md', hideKonsole: 'Masquer Konsole', editorLabel: 'Éditeur de présentation', taskbarLabel: 'Barre des tâches KDE Plasma',
+  identity: 'Oussama AIT AGNAOU · Ingénieur logiciel indépendant et spécialiste réseau · À distance / Maroc',
 } : {
-  selectedWork: 'Selected work', allWork: 'all work →', noWork: 'Case studies will appear here when they are ready to share.', latestNotes: 'Latest notes', allNotes: 'all notes →', noNotes: 'Notes on systems, decisions, and recovery work are being prepared.', principles: 'Working principles', howIWork: 'How I work', principlesText: `${sortedPrinciples.length} practical principles guide how I choose scope, debug problems, document decisions, and keep systems maintainable.`, readPrinciples: 'Read all principles →', resume: 'Resume', resumeText: 'A concise record of published work and selected technical notes.', downloadResume: 'Download resume PDF ↓', workLabel: 'project', readWork: 'read case study →', readNote: 'read note →', minimize: `Minimize ${site.heroDocument} window`, maximize: 'Enter floating window mode', close: `Close ${site.heroDocument} window`, hideKonsole: 'Hide Konsole window', editorLabel: 'Introduction editor', taskbarLabel: 'KDE Plasma taskbar'
+  selectedWork: 'Selected work', allWork: 'all work →', noWork: 'Case studies will appear here when they are ready to share.', latestNotes: 'Latest notes', allNotes: 'all notes →', noNotes: 'Notes on systems, decisions, and recovery work are being prepared.', principles: 'Working principles', howIWork: 'How I work', principlesText: `${sortedPrinciples.length} practical principles guide how I choose scope, debug problems, document decisions, and keep systems maintainable.`, readPrinciples: 'Read all principles →', resume: 'Resume', resumeText: 'A concise record of published work and selected technical notes.', downloadResume: 'Download resume PDF ↓', workLabel: 'project', readWork: 'read case study →', readNote: 'read note →', minimize: `Minimize ${site.heroDocument} window`, maximize: 'Enter floating window mode', close: `Close ${site.heroDocument} window`, hideKonsole: 'Hide Konsole window', editorLabel: 'Introduction editor', taskbarLabel: 'KDE Plasma taskbar',
+  identity: 'Oussama Ait Agnaou · Independent Software Engineer & Network Specialist · Remote / Morocco',
 };
 const displayDate = (date: Date) => new Intl.DateTimeFormat(locale === 'fr' ? 'fr-FR' : 'en', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(date);
 ---
@@ -53,6 +55,7 @@ const displayDate = (date: Date) => new Intl.DateTimeFormat(locale === 'fr' ? 'f
           <div class="vim-desktop-intro" aria-label="Portfolio introduction">
             <h1 id="intro-title" aria-label={`${site.heroLead} ${site.heroSentences[0]}`}><span class="hero-lead">{site.heroLead}</span>{' '}<span data-hero-title data-text={site.heroSentences[0]} data-hero-sentences={JSON.stringify(site.heroSentences)}>{site.heroSentences[0]}</span><span class="cursor hero-title-cursor" aria-hidden="true">█</span></h1>
             <div class="vim-desktop-copy">
+              <p class="hero-identity">{copy.identity}</p>
               {site.heroSubtitleLines.map((line) => <p class="hero-copy">{line}</p>)}
             </div>
           </div>

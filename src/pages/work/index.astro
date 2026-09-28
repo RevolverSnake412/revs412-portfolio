@@ -5,9 +5,9 @@ import WorkIndexEntry from '../../components/WorkIndexEntry.astro';
 import EmptyState from '../../components/EmptyState.astro';
 const work = (await getCollection('work', ({ data }) => data.published)).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 ---
-<BaseLayout title="Work · revs412" description="Case studies focused on constraints, reasoning, and reliable delivery.">
+<BaseLayout title="Software Engineering & Network Infrastructure Case Studies | revs412" description="Case studies in business systems, software integration, network infrastructure, secure remote access, automation, deployment, troubleshooting, and technical documentation.">
   <main class="shell page">
-    <header class="page-header"><p class="eyebrow">case studies</p><h1>Work</h1><p>This section collects selected practical work: systems, tools, and delivery shaped by real constraints and clear reasoning.</p></header>
+    <header class="page-header"><p class="eyebrow">case studies</p><h1>Software engineering and network infrastructure work.</h1><p>Selected case studies in business systems, software integration, secure remote access, automation, deployment, troubleshooting, and technical documentation.</p></header>
     <section class="work-guidance" aria-labelledby="work-guidance-title">
       <h2 id="work-guidance-title">How I use these work pages</h2>
       <p>Each page records the problem, the constraints around it, the approach taken, and the outcome. Tools are included as supporting context, not as the project’s identity.</p>
