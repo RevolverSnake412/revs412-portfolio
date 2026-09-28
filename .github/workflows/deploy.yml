@@ -36,7 +36,7 @@ jobs:
         run: npm run build
         env:
           BASE_PATH: ${{ steps.pages.outputs.base_path }}
-          SITE_URL: https://${{ github.repository_owner }}.github.io
+          SITE_URL: https://revs412.me
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
