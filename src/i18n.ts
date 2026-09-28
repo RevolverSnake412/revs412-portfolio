@@ -14,15 +14,15 @@ export const localizedPath = (locale: Locale, path = '') => {
 export const withBase = (base: string, path: string) => `${base.endsWith('/') ? base : `${base}/`}${path.replace(/^\//, '')}`;
 
 const localizedSections: Record<Locale, readonly string[]> = {
-  en: ['', 'work', 'notes', 'principles', 'resume', 'contact'],
-  fr: ['', 'work', 'notes', 'principles', 'resume', 'contact'],
+  en: ['', 'services', 'work', 'notes', 'principles', 'resume', 'contact'],
+  fr: ['', 'services', 'work', 'notes', 'principles', 'resume', 'contact'],
 };
 
 export const hasLocalizedSection = (locale: Locale, section: string) => localizedSections[locale].includes(section);
 
 const ui = {
-  en: { work: 'Work', notes: 'Notes', principles: 'Principles', resume: 'Resume', contact: 'Contact', menu: 'Menu', translatedWork: 'Translated work', translatedNotes: 'Translated notes', translationPending: 'French translations are being prepared.' },
-  fr: { work: 'Projets', notes: 'Notes', principles: 'Principes', resume: 'CV', contact: 'Contact', menu: 'Menu', translatedWork: 'Projets traduits', translatedNotes: 'Notes traduites', translationPending: 'Les traductions françaises sont en préparation.' },
+  en: { services: 'Services', work: 'Work', notes: 'Notes', principles: 'Principles', resume: 'Resume', contact: 'Contact', menu: 'Menu', translatedWork: 'Translated work', translatedNotes: 'Translated notes', translationPending: 'French translations are being prepared.' },
+  fr: { services: 'Services', work: 'Projets', notes: 'Notes', principles: 'Principes', resume: 'CV', contact: 'Contact', menu: 'Menu', translatedWork: 'Projets traduits', translatedNotes: 'Notes traduites', translationPending: 'Les traductions françaises sont en préparation.' },
 } as const;
 
 export const uiCopy = (locale: Locale) => ui[locale];

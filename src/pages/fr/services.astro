@@ -1,0 +1,42 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+<BaseLayout locale="fr" title="Services d’ingénierie logicielle et infrastructure réseau | revs412" description="Ingénierie logicielle indépendante, infrastructure réseau, automatisation, déploiement, dépannage et documentation technique, à distance depuis le Maroc." alternatePath="services">
+  <main class="shell page services-page">
+    <header class="page-header">
+      <p class="eyebrow">à distance / Maroc</p>
+      <h1>Ingénierie logicielle, réseaux, infrastructure et réalisation technique.</h1>
+      <p>Travail technique indépendant pour les équipes ayant besoin de systèmes métier, d’une infrastructure fiable, d’un accès distant sécurisé, d’automatisation concrète et d’une documentation utile après la transmission.</p>
+    </header>
+
+    <section class="services-grid" aria-label="Domaines de services techniques">
+      <article class="service-card">
+        <p class="eyebrow">01 / systèmes métier</p>
+        <h2>Systèmes métier et intégrations</h2>
+        <p>Fondations logicielles, flux produits et stocks, orientation de migration de données et intégrations qui rendent les informations opérationnelles plus faciles à maintenir et à vérifier.</p>
+        <nav class="service-links" aria-label="Projets liés aux systèmes métier"><a href={`${base}fr/work/gopc-business-website/`}>Site web professionnel GOPC →</a><a href={`${base}fr/work/odoo-product-inventory-integration/`}>Intégration produits et stocks Odoo →</a><a href={`${base}fr/notes/dolibarr-to-odoo-migration-tooling/`}>Outillage de migration Dolibarr vers Odoo →</a></nav>
+      </article>
+
+      <article class="service-card">
+        <p class="eyebrow">02 / infrastructure</p>
+        <h2>Infrastructure réseau et accès distant sécurisé</h2>
+        <p>Conception réseau, flux d’accès WireGuard, administration OpenWrt, protection des services privés et dépannage concret pour des systèmes qui doivent rester accessibles et contrôlés.</p>
+        <nav class="service-links" aria-label="Projets liés à l’infrastructure"><a href={`${base}fr/work/wireguard-admin-access-manager/`}>Gestionnaire d’accès administrateur WireGuard →</a><a href={`${base}fr/notes/wireguard-remote-access-setup/`}>Configuration d’accès distant WireGuard →</a><a href={`${base}fr/notes/openwrt-home-network-setup/`}>Mise en place d’un réseau OpenWrt →</a></nav>
+      </article>
+
+      <article class="service-card">
+        <p class="eyebrow">03 / réalisation</p>
+        <h2>Automatisation, déploiement, dépannage et documentation</h2>
+        <p>Flux de déploiement reproductibles, investigation technique, préparation de récupération et documentation destinée au client qui transforme les détails d’implémentation en décisions utilisables.</p>
+        <nav class="service-links" aria-label="Projets liés à la réalisation"><a href={`${base}fr/work/client-facing-technical-documentation/`}>Documentation technique destinée au client →</a><a href={`${base}fr/notes/docker-deployment-scripts-for-small-services/`}>Scripts de déploiement Docker →</a><a href={`${base}fr/notes/pull-based-backup-replication-to-openwrt-storage/`}>Réplication de sauvegardes vers un stockage OpenWrt →</a></nav>
+      </article>
+    </section>
+
+    <section class="services-contact" aria-labelledby="services-contact-heading">
+      <h2 id="services-contact-heading">Discuter d’un projet technique</h2>
+      <p>Disponible pour des missions réfléchies en logiciel, infrastructure, réseau, automatisation, déploiement et documentation.</p>
+      <a href={`${base}fr/contact/`}>Ouvrir une conversation →</a>
+    </section>
+  </main>
+</BaseLayout>

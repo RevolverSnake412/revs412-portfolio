@@ -8,11 +8,13 @@ const cleanPath = pathname.replace(/\/+$/, '') || '/';
 const segments = cleanPath.split('/').filter(Boolean);
 const workIndex = segments.lastIndexOf('work');
 const notesIndex = segments.lastIndexOf('notes');
+const servicesIndex = segments.lastIndexOf('services');
 const isWork = workIndex >= 0;
 const isNotes = notesIndex >= 0;
+const isServices = servicesIndex >= 0;
 const detailIndex = isWork ? workIndex : isNotes ? notesIndex : -1;
 const slug = detailIndex >= 0 && segments[detailIndex + 1] ? decodeURIComponent(segments[detailIndex + 1]) : undefined;
-const area = isWork ? 'work' : isNotes ? 'notes' : segments.includes('principles') ? 'principles' : segments.includes('contact') ? 'contact' : undefined;
+const area = isWork ? 'work' : isNotes ? 'notes' : isServices ? 'services' : segments.includes('principles') ? 'principles' : segments.includes('contact') ? 'contact' : undefined;
 const isDetail = Boolean(area && slug);
 const location = area ? `~/${area}${isDetail ? `/${slug}` : ''}` : '~';
 const generatedCommand = area === 'work' && isDetail
@@ -21,6 +23,8 @@ const generatedCommand = area === 'work' && isDetail
     ? `cat ${slug}.md`
     : area === 'work' || area === 'notes'
       ? 'cat index.txt && ls'
+      : area === 'services'
+        ? 'cat index.txt && ls'
       : area === 'principles'
         ? 'cat principles.txt'
         : area === 'contact'

@@ -12,7 +12,7 @@ const normalizedPath = `${path.replace(/\/+$/, '') || '/'}/`;
 const sectionHref = (section: string) => withBase(base, localizedPath(hasLocalizedSection(locale, section) ? locale : defaultLocale, section));
 const links = [
   { href: sectionHref('work'), path: sectionHref('work'), label: copy.work }, { href: sectionHref('notes'), path: sectionHref('notes'), label: copy.notes },
-  { href: sectionHref('principles'), path: sectionHref('principles'), label: copy.principles }, { href: sectionHref('resume'), path: sectionHref('resume'), label: copy.resume }, { href: sectionHref('contact'), path: sectionHref('contact'), label: copy.contact },
+  { href: sectionHref('principles'), path: sectionHref('principles'), label: copy.principles }, { href: sectionHref('services'), path: sectionHref('services'), label: copy.services }, { href: sectionHref('resume'), path: sectionHref('resume'), label: copy.resume }, { href: sectionHref('contact'), path: sectionHref('contact'), label: copy.contact },
 ];
 ---
 <header class="site-header">
