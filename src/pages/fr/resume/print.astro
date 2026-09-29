@@ -19,7 +19,6 @@ const portfolioLink = (path: string) => new URL(`fr/${path.replace(/^\/+/, '')}`
     <div class="resume-actions shell"><a href={`${import.meta.env.BASE_URL}Oussama-Ait-Agnaou-CV-Francais.pdf`} download>Télécharger le CV PDF ↓</a></div>
     <article class="resume-document" lang="fr">
       <header class="resume-header">
-        <p class="resume-brand">{profile.data.brand}</p>
         <h1>{frenchProfile.name}</h1>
         <p class="resume-headline">{frenchProfile.headline}</p>
         <p class="resume-contact"><a href={`mailto:${settings.data.contact.email}`}>{settings.data.contact.email}</a><span aria-hidden="true"> · </span><a href={profile.data.portfolioUrl}>revs412.me</a><span aria-hidden="true"> · </span><a href={profile.data.linkedinUrl}>LinkedIn</a><span aria-hidden="true"> · </span><a href={profile.data.githubUrl}>GitHub</a></p>

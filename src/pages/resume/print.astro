@@ -19,7 +19,6 @@ const portfolioLink = (path: string) => new URL(path.replace(/^\/+/, ''), `${pro
     <div class="resume-actions shell"><a href={`${base}Oussama-Ait-Agnaou-Resume.pdf`} download>Download PDF ↓</a></div>
     <article class="resume-document">
       <header class="resume-header">
-        <p class="resume-brand">{profile.data.brand}</p>
         {profile.data.name && <h1>{profile.data.name}</h1>}
         <p class="resume-headline">{profile.data.headline}</p>
         <p class="resume-contact"><a href={`mailto:${settings.data.contact.email}`}>{settings.data.contact.email}</a><span aria-hidden="true"> · </span><a href={profile.data.portfolioUrl}>revs412.me</a><span aria-hidden="true"> · </span><a href={profile.data.linkedinUrl}>LinkedIn</a><span aria-hidden="true"> · </span><a href={profile.data.githubUrl}>GitHub</a></p>
