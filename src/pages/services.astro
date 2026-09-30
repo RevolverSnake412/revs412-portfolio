@@ -2,40 +2,40 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 const base = import.meta.env.BASE_URL;
 ---
-<BaseLayout title="Software Engineering & Network Infrastructure Services | revs412" description="Independent software engineering, network infrastructure, automation, deployment, troubleshooting, and technical documentation for remote clients from Morocco." alternatePath="services">
+<BaseLayout title="Infrastructure & Network Engineering Services | revs412" description="Independent network infrastructure, secure remote access, systems administration, automation, deployment, troubleshooting, backup and recovery, and technical documentation for remote clients from Morocco." alternatePath="services">
   <main class="shell page services-page">
     <header class="page-header">
       <p class="eyebrow">remote / Morocco</p>
-      <h1>Software engineering, network infrastructure, and technical delivery.</h1>
-      <p>Independent technical work for teams that need business systems, dependable infrastructure, secure remote access, practical automation, and documentation that stays useful after handover.</p>
+      <h1>Network infrastructure, secure access, and technical operations.</h1>
+      <p>Independent technical work for teams that need dependable infrastructure, secure remote access, practical automation, recovery planning, and documentation that stays useful after handover.</p>
     </header>
 
     <section class="services-grid" aria-label="Technical service areas">
       <article class="service-card">
-        <p class="eyebrow">01 / business systems</p>
-        <h2>Business systems and integrations</h2>
-        <p>Software foundations, product and inventory workflows, data migration direction, and integrations that make operational information easier to maintain and verify.</p>
-        <nav class="service-links" aria-label="Related business systems work"><a href={`${base}work/gopc-business-website/`}>GOPC business website →</a><a href={`${base}work/odoo-product-inventory-integration/`}>Odoo product and inventory integration →</a><a href={`${base}notes/dolibarr-to-odoo-migration-tooling/`}>Dolibarr to Odoo migration tooling →</a></nav>
-      </article>
-
-      <article class="service-card">
-        <p class="eyebrow">02 / infrastructure</p>
+        <p class="eyebrow">01 / secure access</p>
         <h2>Network infrastructure and secure remote access</h2>
         <p>Network design, WireGuard access workflows, OpenWrt administration, private service boundaries, and practical troubleshooting for systems that need to remain reachable and controlled.</p>
-        <nav class="service-links" aria-label="Related infrastructure work"><a href={`${base}work/wireguard-admin-access-manager/`}>WireGuard admin access manager →</a><a href={`${base}notes/wireguard-remote-access-setup/`}>WireGuard remote access setup →</a><a href={`${base}notes/openwrt-home-network-setup/`}>OpenWrt network setup →</a></nav>
+        <nav class="service-links" aria-label="Related secure access work"><a href={`${base}work/wireguard-admin-access-manager/`}>WireGuard admin access manager →</a><a href={`${base}notes/wireguard-remote-access-setup/`}>WireGuard remote access setup →</a><a href={`${base}notes/openwrt-home-network-setup/`}>OpenWrt network setup →</a></nav>
       </article>
 
       <article class="service-card">
-        <p class="eyebrow">03 / delivery</p>
-        <h2>Automation, deployment, troubleshooting, and documentation</h2>
-        <p>Repeatable deployment workflows, technical investigation, recovery planning, and client-facing documentation that turns implementation details into decisions teams can use.</p>
-        <nav class="service-links" aria-label="Related delivery work"><a href={`${base}work/client-facing-technical-documentation/`}>Client-facing technical documentation →</a><a href={`${base}notes/docker-deployment-scripts-for-small-services/`}>Docker deployment scripts →</a><a href={`${base}notes/pull-based-backup-replication-to-openwrt-storage/`}>Backup replication to OpenWrt storage →</a></nav>
+        <p class="eyebrow">02 / systems operations</p>
+        <h2>Systems administration, automation, and recovery</h2>
+        <p>Linux and self-hosted services, repeatable deployment workflows, backup replication, and recovery planning that keep operational systems dependable over time.</p>
+        <nav class="service-links" aria-label="Related systems operations work"><a href={`${base}notes/docker-deployment-scripts-for-small-services/`}>Docker deployment scripts →</a><a href={`${base}notes/pull-based-backup-replication-to-openwrt-storage/`}>Backup replication to OpenWrt storage →</a><a href={`${base}notes/openwrt-storage-expansion-on-raspberry-pi/`}>OpenWrt storage expansion →</a></nav>
+      </article>
+
+      <article class="service-card">
+        <p class="eyebrow">03 / technical delivery</p>
+        <h2>Troubleshooting and technical documentation</h2>
+        <p>Technical investigation, clear operational documentation, and recovery direction that turn implementation details into decisions teams can use and support.</p>
+        <nav class="service-links" aria-label="Related technical delivery work"><a href={`${base}work/client-facing-technical-documentation/`}>Client-facing technical documentation →</a><a href={`${base}work/dvr-remote-camera-access-setup/`}>DVR remote camera access setup →</a><a href={`${base}notes/router-firmware-recovery-through-serial-and-flash-access/`}>Router firmware recovery →</a></nav>
       </article>
     </section>
 
     <section class="services-contact" aria-labelledby="services-contact-heading">
       <h2 id="services-contact-heading">Discuss a technical project</h2>
-      <p>Available for considered software, infrastructure, network, automation, deployment, and documentation work.</p>
+      <p>Available for considered infrastructure, network, systems administration, automation, deployment, recovery, and documentation work.</p>
       <a href={`${base}contact/`}>Open a conversation →</a>
     </section>
   </main>

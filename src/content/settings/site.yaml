@@ -5,7 +5,7 @@ site:
   heroLead: Practical technical systems,
   heroDocument: intro.md
   heroSubtitleLines:
-    - I work on business systems, software systems, infrastructure, automation, deployment, troubleshooting, and technical documentation.
+    - I work on network infrastructure, secure remote access, systems administration, automation, deployment, troubleshooting, backup and recovery, and technical documentation.
     - My focus is choosing the right level of complexity and making systems understandable, usable, and reliable.
   heroSentences:
     - built with clear reasoning.
@@ -39,7 +39,7 @@ site:
     - built to fit the environment.
     - kept useful after delivery.
   description: >-
-    I work on business systems, software systems, infrastructure, automation, deployment, troubleshooting, and technical documentation.
+    I work on network infrastructure, secure remote access, systems administration, automation, deployment, troubleshooting, backup and recovery, and technical documentation.
     My focus is choosing the right level of complexity and making systems understandable, usable, and reliable.
   introCommand: revs412@portfolio:~$ vim intro.md
   capabilities:

@@ -1,16 +1,16 @@
 resume:
   brand: revs412
   name: Oussama Ait Agnaou
-  headline: Independent Software Engineer & Network Specialist
+  headline: Independent Infrastructure & Network Engineer
   summary: >-
-    Software Engineer and Network Specialist focused on designing, building, and maintaining reliable technical systems. My work spans business tools, software systems, network infrastructure, automation, deployment, troubleshooting, and technical documentation. I approach projects by clarifying real requirements, choosing maintainable solutions, and making the resulting system understandable for both operators and future developers.
+    Infrastructure and Network Engineer focused on designing, operating, and improving reliable technical environments. My work spans network infrastructure, secure remote access, Linux and self-hosted services, automation, deployment, troubleshooting, backup and recovery, and technical documentation. I approach projects by clarifying operational requirements, choosing maintainable solutions, and making systems understandable for the people who operate and support them.
   portfolioUrl: https://revs412.me
   linkedinUrl: https://www.linkedin.com/in/revs412/
   githubUrl: https://github.com/RevolverSnake412
   capabilities:
-    - Business & Software Systems
     - Network Infrastructure & Secure Remote Access
-    - Automation, Deployment & Operations
+    - Linux Systems & Self-Hosted Services
+    - Automation, Deployment & Recovery
     - Troubleshooting & Technical Documentation
   education:
     - institution: OFPPT
@@ -23,11 +23,11 @@ resume:
   translations:
     fr:
       name: Oussama AIT AGNAOU
-      headline: Ingénieur logiciel indépendant & spécialiste réseau
+      headline: Ingénieur infrastructure et réseau indépendant
       summary: >-
-        Ingénieur logiciel et spécialiste réseau indépendant, je conçois, réalise et maintiens des systèmes techniques fiables. Mon travail couvre les outils métier, les systèmes logiciels, les infrastructures réseau, l’automatisation, le déploiement, le dépannage et la documentation technique. J’aborde chaque projet en clarifiant les besoins réels, en choisissant des solutions maintenables et en rendant le résultat compréhensible pour les opérateurs comme pour les futurs développeurs.
+        Ingénieur infrastructure et réseau indépendant, je conçois, exploite et améliore des environnements techniques fiables. Mon travail couvre l’infrastructure réseau, l’accès distant sécurisé, les systèmes Linux et services auto-hébergés, l’automatisation, le déploiement, le dépannage, la sauvegarde, la récupération et la documentation technique. J’aborde chaque projet en clarifiant les besoins opérationnels, en choisissant des solutions maintenables et en rendant les systèmes compréhensibles pour les personnes qui les utilisent et les maintiennent.
       capabilities:
-        - Systèmes métier et logiciels
         - Infrastructure réseau et accès distant sécurisé
-        - Automatisation, déploiement et opérations
+        - Systèmes Linux et services auto-hébergés
+        - Automatisation, déploiement et récupération
         - Dépannage et documentation technique

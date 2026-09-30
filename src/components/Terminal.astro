@@ -16,7 +16,7 @@ const [work, notes, principles] = await Promise.all([
 const terminalData = {
   base: contentBase,
   copy,
-  intro: locale === 'fr' ? 'Je travaille sur des outils métier, des systèmes logiciels, des infrastructures, l’automatisation, le déploiement et le dépannage. Mon objectif est de choisir le bon niveau de complexité et de rendre les systèmes compréhensibles, utilisables et fiables.' : settings.description,
+  intro: locale === 'fr' ? 'Je travaille sur l’infrastructure réseau, l’accès distant sécurisé, l’administration système, l’automatisation, le déploiement, le dépannage, la sauvegarde, la récupération et la documentation technique. Mon objectif est de choisir le bon niveau de complexité et de rendre les systèmes compréhensibles, utilisables et fiables.' : settings.description,
   contact: { ...settings.contact, availability: locale === 'fr' ? 'Disponible pour des missions techniques réfléchies.' : settings.contact.availability, location: locale === 'fr' ? 'À distance / Maroc' : settings.contact.location },
   work: work.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()).flatMap(({ data }) => {
     const item = locale === 'fr' ? data.translations?.fr : data;

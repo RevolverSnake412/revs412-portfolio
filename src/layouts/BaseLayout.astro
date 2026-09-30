@@ -25,8 +25,8 @@ const personSchema: StructuredData = {
   '@id': `${siteUrl}#oussama-ait-agnaou`,
   name: 'Oussama Ait Agnaou',
   url: siteUrl,
-  jobTitle: locale === 'fr' ? 'Ingénieur logiciel indépendant et spécialiste réseau' : 'Independent Software Engineer and Network Specialist',
-  description: locale === 'fr' ? 'Ingénieur logiciel indépendant et spécialiste réseau, disponible à distance depuis le Maroc.' : 'Independent Software Engineer and Network Specialist, available remotely from Morocco.',
+  jobTitle: locale === 'fr' ? 'Ingénieur infrastructure et réseau indépendant' : 'Independent Infrastructure & Network Engineer',
+  description: locale === 'fr' ? 'Ingénieur infrastructure et réseau indépendant, disponible à distance depuis le Maroc.' : 'Independent Infrastructure & Network Engineer, available remotely from Morocco.',
   address: { '@type': 'PostalAddress', addressCountry: 'MA' },
   sameAs: [settings.data.contact.github, settings.data.contact.linkedin].filter((value): value is string => Boolean(value)),
 };
